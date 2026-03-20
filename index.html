@@ -135,16 +135,46 @@
             </section>
 
             <!-- View: Profile (Profil) -->
-            <section id="view-profile" class="view hidden" style="height: 100%; padding-bottom: 20px;">
+            <section id="view-profile" class="view hidden" style="height: 100%; padding-bottom: 20px; overflow-y: auto;">
                 <h2 class="view-title" style="margin-bottom: 30px; text-align: center;">Twój Profil</h2>
-                <div class="settings-card" style="display: flex; flex-direction: column; align-items: center; padding: 40px 20px; width: 100%; text-align: center;">
-                    <div style="width: 100px; height: 100px; border-radius: 50%; background-color: var(--primary-color); display: flex; justify-content: center; align-items: center; font-size: 3.5rem; color: white; margin-bottom: 20px;">
+                
+                <!-- Profile Card -->
+                <div class="settings-card" style="display: flex; flex-direction: column; align-items: center; padding: 40px 20px; width: 100%; text-align: center; margin-bottom: 20px;">
+                    <div id="profile-avatar-container" style="width: 100px; height: 100px; border-radius: 50%; background-color: var(--primary-color); display: flex; justify-content: center; align-items: center; font-size: 3.5rem; color: white; margin-bottom: 20px; cursor: pointer; transition: opacity 0.2s;" title="Zmień zdjęcie profilowe">
                         <i class="fa-solid fa-user"></i>
                     </div>
                     <h3 id="profile-displayname-display" style="font-size: 2rem; font-weight: 900; margin-bottom: 5px; color: var(--text-color);"></h3>
                     <p id="profile-username-display" style="font-size: 1.1rem; font-weight: 400; color: var(--text-light); margin-bottom: 25px;"></p>
                     <div style="width: 100%; height: 2px; background-color: var(--border-color); margin-bottom: 25px;"></div>
                     <p id="profile-bio-display" style="font-weight: 600; line-height: 1.6; color: var(--text-color); font-size: 1.1rem; word-break: break-word;"></p>
+                </div>
+
+                <!-- Edit Display Name -->
+                <div class="settings-card" style="margin-bottom: 20px;">
+                    <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <label style="font-weight: 800;"><i class="fa-solid fa-pen" style="margin-right: 8px; color: var(--primary-color);"></i>Display Name</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="settings-display-name-input" class="input-field" placeholder="Display Name..." style="flex: 1;">
+                            <button id="btn-save-display-name" class="btn btn-primary btn-small">Zapisz</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Bio -->
+                <div class="settings-card" style="margin-bottom: 20px;">
+                    <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <label style="font-weight: 800;"><i class="fa-solid fa-quote-left" style="margin-right: 8px; color: var(--primary-color);"></i>Biografia</label>
+                        <textarea id="settings-bio-input" class="input-field" placeholder="Twoja biografia..." style="width: 100%; resize: vertical; min-height: 80px;"></textarea>
+                        <button id="btn-save-bio" class="btn btn-primary btn-small">Zapisz biografię</button>
+                    </div>
+                </div>
+
+                <!-- Profile Picture -->
+                <div class="settings-card" style="margin-bottom: 20px;">
+                    <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <label style="font-weight: 800;"><i class="fa-solid fa-camera" style="margin-right: 8px; color: var(--primary-color);"></i>Zdjęcie profilowe</label>
+                        <button id="btn-set-avatar" class="btn btn-secondary btn-small" disabled style="width: 100%;">Ustaw profilowe (wkrótce)</button>
+                    </div>
                 </div>
             </section>
 
@@ -155,18 +185,6 @@
                     <div class="setting-item">
                         <label>Konto: <strong id="settings-username-display" style="color:var(--primary-color);"></strong></label>
                         <button id="btn-logout" class="btn btn-secondary btn-small">Wyloguj</button>
-                    </div>
-                    <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                        <label style="margin-bottom: 5px;">Personalizuj konto</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="settings-display-name-input" class="input-field" placeholder="Display Name..." style="flex: 1;">
-                            <button id="btn-save-display-name" class="btn btn-primary btn-small">Zapisz</button>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-                            <textarea id="settings-bio-input" class="input-field" placeholder="Twoja biografia..." style="width: 100%; resize: vertical; min-height: 80px;"></textarea>
-                            <button id="btn-save-bio" class="btn btn-primary btn-small">Zapisz biografię</button>
-                        </div>
-                        <button id="btn-set-avatar" class="btn btn-secondary btn-small" disabled style="width: 100%; margin-top: 10px;">Ustaw profilowe</button>
                     </div>
                     <div class="setting-item">
                         <label>Tryb ciemny</label>
@@ -195,6 +213,10 @@
             <button class="nav-item" data-target="view-messages">
                 <div class="nav-icon-wrapper"><i class="fa-solid fa-envelope"></i></div>
                 <span>Wiadomości</span>
+            </button>
+            <button class="nav-item" data-target="view-profile">
+                <div class="nav-icon-wrapper"><i class="fa-solid fa-user"></i></div>
+                <span>Profil</span>
             </button>
             <button class="nav-item" data-target="view-settings">
                 <div class="nav-icon-wrapper"><i class="fa-solid fa-gear"></i></div>

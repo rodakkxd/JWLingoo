@@ -996,6 +996,15 @@ function setupEventListeners() {
                     }
                 }, 50);
             });
+            
+            // Populate profile data when Profile tab is opened
+            if (targetView === 'view-profile' && currentUser) {
+                elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
+                elements.profileUsernameDisplay.textContent = `@${currentUser}`;
+                elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
+                if (elements.settingsDisplayNameInput) elements.settingsDisplayNameInput.value = state.displayName || '';
+                if (elements.settingsBioInput) elements.settingsBioInput.value = state.bio || '';
+            }
         });
     });
 
@@ -1058,6 +1067,7 @@ function setupEventListeners() {
                 state.displayName = newName;
                 await saveState();
                 updateUI();
+                elements.profileDisplayNameDisplay.textContent = newName || currentUser;
                 showToast("Zaktualizowano display name!");
             } catch(e) {
                 console.error("Error saving display name:", e);
@@ -1077,6 +1087,7 @@ function setupEventListeners() {
             try {
                 state.bio = newBio;
                 await saveState();
+                elements.profileBioDisplay.textContent = newBio || "Tu jeszcze nic nie ma...";
                 showToast("Zaktualizowano biografię!");
             } catch(e) { 
                 showToast("Błąd zapisu!"); 
