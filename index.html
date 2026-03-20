@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JWLingo</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth View -->
+        <section id="view-auth" class="view active" style="height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+            <div class="settings-card" style="width: 100%; text-align: center;">
+                <div class="modal-icon" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 10px;"><i class="fa-solid fa-book-open"></i></div>
+                <h1 style="font-size: 2.8rem; font-weight: 900; color: var(--primary-color); margin-bottom: 5px; letter-spacing: -2px;">JWLingo</h1>
+                <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 20px; color: var(--text-color);">Zaloguj się</h2>
+                <p style="margin-bottom: 20px; font-weight: 700; color: var(--text-light);">Jeśli konto nie istnieje, zostanie utworzone automatycznie.</p>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <input type="text" id="auth-username" placeholder="Nazwa użytkownika" class="input-field" style="width: 100%;">
+                    <input type="text" id="auth-displayname" placeholder="Display Name (opcjonalny)" class="input-field" style="width: 100%;">
+                    <input type="password" id="auth-password" placeholder="Hasło" class="input-field" style="width: 100%;">
+                    <button id="btn-auth" class="btn btn-primary btn-chunky">Wejdź</button>
+                    <p id="auth-error" class="hidden" style="color: var(--danger-color); font-weight: 700; margin-top: 10px;">Błędne hasło!</p>
+                </div>
+            </div>
+        </section>
+
+        <div id="main-app-container" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+            <!-- Header -->
+            <header class="top-nav">
+                <div class="streak-container">
+                    <i class="fa-solid fa-fire streak-icon"></i>
+                    <span id="streak-count">0</span>
+                </div>
+                <div class="user-greeting" id="btn-open-profile" style="cursor: pointer; text-align: right; transition: opacity 0.2s;">
+                    <span id="greeting-displayname" style="font-weight: 800; font-size: 1.1rem; display: block; color: var(--primary-color);"></span>
+                    <span id="greeting-username" style="font-weight: 400; font-size: 0.85rem; opacity: 0.8; display: block;"></span>
+                </div>
+            </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- View: Read (Czytanie) -->
+            <section id="view-read" class="view active">
+                <div class="daily-text-card">
+                    <h2 id="daily-text-date">Dzisiejszy tekst</h2>
+                    <p class="daily-text-quote" id="daily-text-quote">
+                        "Bądź odważny i silny. Nie bój się ani nie przerażaj, bo twój Bóg, Jehowa, jest z tobą wszędzie, dokądkolwiek pójdziesz."
+                    </p>
+                    <p class="daily-text-source" id="daily-text-source">— Jozuego 1:9</p>
+                </div>
+                
+                <div class="action-container">
+                    <button id="btn-read" class="btn btn-primary btn-chunky">
+                        <span class="btn-text">Przeczytano?</span>
+                    </button>
+                    <p id="read-status" class="status-msg hidden">Już dzisiaj czytałeś! Wróć jutro.</p>
+                </div>
+            </section>
+
+            <!-- Quiz Overlay -->
+            <div id="quiz-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 1000; display: flex; flex-direction: column; padding: 30px 20px; overflow-y: auto;">
+                <!-- Header bar -->
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px;">
+                    <button id="btn-quiz-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light);"><i class="fa-solid fa-xmark"></i></button>
+                    <div style="flex: 1; background: var(--border-color); border-radius: 100px; height: 10px;">
+                        <div id="quiz-progress-bar" style="height: 100%; width: 0%; background: var(--primary-color); border-radius: 100px; transition: width 0.4s ease;"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; color: var(--danger-color); font-weight: 900; font-size: 1rem;">
+                        <i class="fa-solid fa-heart"></i>
+                        <span id="quiz-lives">3</span>
+                    </div>
+                </div>
+                
+                <div id="quiz-content" style="flex: 1; display: flex; flex-direction: column;">
+                    <p style="font-size: 0.95rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Pytanie dnia</p>
+                    <h2 id="quiz-question" style="font-size: 1.4rem; font-weight: 800; color: var(--text-color); line-height: 1.4; margin-bottom: 30px;"></h2>
+                    <div id="quiz-answers" style="display: flex; flex-direction: column; gap: 14px;"></div>
+                </div>
+                
+                <div id="quiz-result-bar" class="hidden" style="padding: 20px; border-radius: 16px; margin-top: 20px; text-align: center;">
+                    <p id="quiz-result-text" style="font-size: 1.2rem; font-weight: 900; margin-bottom: 15px;"></p>
+                    <button id="btn-quiz-continue" class="btn btn-primary btn-chunky">Dalej</button>
+                </div>
+            </div>
+
+            <!-- View: Friends (Znajomi) -->
+            <section id="view-friends" class="view hidden" style="height: 100%; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="view-title" style="margin-bottom: 0;">Twoi Znajomi</h2>
+                    <button id="btn-toggle-search" class="btn btn-secondary btn-small" style="background-color: var(--secondary-color); color: white; display: flex; gap: 8px; align-items: center; padding: 5px 16px; border-radius: 8px;">
+                        <span>szukaj</span> <i class="fa-solid fa-search"></i>
+                    </button>
+                </div>
+                
+                <!-- Search bar -->
+                <div id="search-friend-module" class="settings-card hidden" style="margin-bottom: 20px; padding: 16px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="search-friend-input" class="input-field" placeholder="Dodaj znajomego (nick)..." style="flex: 1;">
+                        <button id="btn-search-friend" class="btn" style="background: white; border: none; width: 44px; height: 44px; border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer;"><i class="fa-solid fa-search" style="color: var(--primary-color);"></i></button>
+                    </div>
+                    <div id="search-results" style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+
+                <div class="friends-grid" id="friends-list" style="flex: 1; overflow-y: auto; padding-bottom: 30px;">
+                    <!-- Friends added via JS -->
+                </div>
+            </section>
+
+            <!-- View: Messages (Wiadomości) -->
+            <section id="view-messages" class="view hidden">
+                <h2 class="view-title">Wiadomości</h2>
+                
+                <div id="messages-friends-list" class="friends-list">
+                    <!-- Friends list for messaging added via JS -->
+                </div>
+
+                <!-- Chat Interface -->
+                <div id="chat-interface" class="hidden" style="display: flex; flex-direction: column; height: calc(100vh - 200px);">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px; gap: 10px;">
+                        <button id="btn-back-to-messages" class="btn btn-secondary btn-small"><i class="fa-solid fa-arrow-left"></i> Wróć</button>
+                        <h3 id="chat-with-name" style="margin: 0; color: var(--text-color);"></h3>
+                    </div>
+                    <div id="chat-messages" style="flex: 1; overflow-y: auto; background: var(--bg-color); border: 2px solid var(--border-color); border-radius: 16px; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Messages will go here -->
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="chat-input" class="input-field" placeholder="Napisz wiadomość...">
+                        <button id="btn-send-message" class="btn btn-primary btn-small"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Profile (Profil) -->
+            <section id="view-profile" class="view hidden" style="height: 100%; padding-bottom: 20px;">
+                <h2 class="view-title" style="margin-bottom: 30px; text-align: center;">Twój Profil</h2>
+                <div class="settings-card" style="display: flex; flex-direction: column; align-items: center; padding: 40px 20px; width: 100%; text-align: center;">
+                    <div style="width: 100px; height: 100px; border-radius: 50%; background-color: var(--primary-color); display: flex; justify-content: center; align-items: center; font-size: 3.5rem; color: white; margin-bottom: 20px;">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <h3 id="profile-displayname-display" style="font-size: 2rem; font-weight: 900; margin-bottom: 5px; color: var(--text-color);"></h3>
+                    <p id="profile-username-display" style="font-size: 1.1rem; font-weight: 400; color: var(--text-light); margin-bottom: 25px;"></p>
+                    <div style="width: 100%; height: 2px; background-color: var(--border-color); margin-bottom: 25px;"></div>
+                    <p id="profile-bio-display" style="font-weight: 600; line-height: 1.6; color: var(--text-color); font-size: 1.1rem; word-break: break-word;"></p>
+                </div>
+            </section>
+
+            <!-- View: Settings (Ustawienia) -->
+            <section id="view-settings" class="view hidden">
+                <h2 class="view-title">Ustawienia</h2>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <label>Konto: <strong id="settings-username-display" style="color:var(--primary-color);"></strong></label>
+                        <button id="btn-logout" class="btn btn-secondary btn-small">Wyloguj</button>
+                    </div>
+                    <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <label style="margin-bottom: 5px;">Personalizuj konto</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="settings-display-name-input" class="input-field" placeholder="Display Name..." style="flex: 1;">
+                            <button id="btn-save-display-name" class="btn btn-primary btn-small">Zapisz</button>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                            <textarea id="settings-bio-input" class="input-field" placeholder="Twoja biografia..." style="width: 100%; resize: vertical; min-height: 80px;"></textarea>
+                            <button id="btn-save-bio" class="btn btn-primary btn-small">Zapisz biografię</button>
+                        </div>
+                        <button id="btn-set-avatar" class="btn btn-secondary btn-small" disabled style="width: 100%; margin-top: 10px;">Ustaw profilowe</button>
+                    </div>
+                    <div class="setting-item">
+                        <label>Tryb ciemny</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="theme-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item danger-zone">
+                        <button id="btn-reset" class="btn btn-danger btn-chunky btn-small">Zresetuj postęp</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-target="view-read">
+                <div class="nav-icon-wrapper"><i class="fa-solid fa-book-open"></i></div>
+                <span>Czytaj</span>
+            </button>
+            <button class="nav-item" data-target="view-friends">
+                <div class="nav-icon-wrapper"><i class="fa-solid fa-user-group"></i></div>
+                <span>Znajomi</span>
+            </button>
+            <button class="nav-item" data-target="view-messages">
+                <div class="nav-icon-wrapper"><i class="fa-solid fa-envelope"></i></div>
+                <span>Wiadomości</span>
+            </button>
+            <button class="nav-item" data-target="view-settings">
+                <div class="nav-icon-wrapper"><i class="fa-solid fa-gear"></i></div>
+                <span>Opcje</span>
+            </button>
+        </nav>
+        </div><!-- End main-app-container -->
+        
+        <!-- Modal for Milestones / Achievements -->
+        <div id="achievement-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-icon"><i class="fa-solid fa-trophy"></i></div>
+                <h2 id="modal-title">Super!</h2>
+                <p id="modal-text">Osiągnąłeś nowy kamień milowy!</p>
+                <button id="btn-close-modal" class="btn btn-primary btn-chunky">Świetnie!</button>
+            </div>
+            <div class="confetti-container" id="confetti-container"></div>
+        </div>
+        
+        <!-- Toast Notifications for funny messages -->
+        <div id="toast-container"></div>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
