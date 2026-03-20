@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWLingo - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-section { padding: 20px; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 2px solid var(--border-color); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login View -->
+        <section id="view-admin-auth" class="view active" style="height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+            <div class="settings-card" style="width: 100%; text-align: center;">
+                <h1 style="color: var(--danger-color); margin-bottom: 20px;">Admin Panel</h1>
+                <input type="password" id="admin-pass" placeholder="Hasło" class="input-field" style="width: 100%; margin-bottom: 15px;">
+                <button id="btn-admin-login" class="btn btn-danger btn-chunky">Zaloguj</button>
+                <p id="admin-error" class="hidden" style="color: var(--danger-color); margin-top: 10px; font-weight: bold;">Błędne hasło</p>
+            </div>
+        </section>
+
+        <!-- Admin Main App -->
+        <div id="admin-app-container" class="hidden" style="display: flex; flex-direction: column; height: 100vh;">
+            <header class="top-nav" style="background: var(--danger-color); color: white; border: none;">
+                <h2 style="font-weight: 900;">Panel Administratora</h2>
+            </header>
+
+            <main id="admin-content" style="flex: 1; overflow-y: auto; padding-bottom: 100px;">
+                <!-- Konta Tab -->
+                <section id="tab-konta" class="view active admin-section">
+                    <h2 class="view-title">Konta</h2>
+                    <div id="admin-users-list"></div>
+                </section>
+
+                <!-- Streaks Tab -->
+                <section id="tab-streaks" class="view hidden admin-section">
+                    <h2 class="view-title">Modyfikacja streaków</h2>
+                    <div id="admin-streaks-list"></div>
+                </section>
+
+                <!-- Opcje Tab -->
+                <section id="tab-opcje" class="view hidden admin-section">
+                    <h2 class="view-title">Opcje</h2>
+                    <button id="btn-admin-logout" class="btn btn-secondary btn-chunky">Log Out</button>
+                </section>
+            </main>
+
+            <!-- Bottom Nav -->
+            <nav class="bottom-nav">
+                <button class="nav-item active" data-target="tab-konta">
+                    <div class="nav-icon-wrapper"><i class="fa-solid fa-users"></i></div>
+                    <span>Konta</span>
+                </button>
+                <button class="nav-item" data-target="tab-streaks">
+                    <div class="nav-icon-wrapper"><i class="fa-solid fa-fire"></i></div>
+                    <span>Streaki</span>
+                </button>
+                <button class="nav-item" data-target="tab-opcje">
+                    <div class="nav-icon-wrapper"><i class="fa-solid fa-gear"></i></div>
+                    <span>Opcje</span>
+                </button>
+            </nav>
+        </div>
+        
+        <!-- Modal for Actions -->
+        <div id="admin-modal" class="modal hidden">
+            <div class="modal-content" style="text-align: left;">
+                <h2 id="modal-username" style="margin-bottom: 20px; color: var(--text-color); font-weight: 800; text-align: center;"></h2>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button id="btn-action-ban" class="btn btn-danger btn-chunky">Ban</button>
+                    <button id="btn-action-deactivate" class="btn btn-secondary btn-chunky">Dezaktywuj</button>
+                    <button id="btn-action-activate" class="btn btn-primary btn-chunky" style="background-color: var(--primary-color);">Aktywuj</button>
+                    <button id="btn-action-delete" class="btn btn-danger btn-chunky" style="background-color: darkred; border-bottom-color: maroon;">Usun konto</button>
+                    <button id="btn-action-cancel" class="btn btn-primary btn-chunky" style="margin-top: 10px;">Anuluj</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast-container"></div>
+    </div>
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
