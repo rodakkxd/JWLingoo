@@ -749,53 +749,6 @@ async function renderFriends() {
     document.querySelectorAll('#friends-list .btn-view-profile').forEach(btn => {
         btn.addEventListener('click', handleProfileViewClick);
     });
-
-    // Sub-view navigation for Community -> Ranking / Friends
-    if (elements.btnOpenRanking) {
-        elements.btnOpenRanking.addEventListener('click', () => {
-            elements.viewCommunity.classList.remove('active');
-            setTimeout(() => {
-                elements.viewCommunity.classList.add('hidden');
-                elements.viewRanking.classList.remove('hidden');
-                setTimeout(() => elements.viewRanking.classList.add('active'), 10);
-                renderRanking();
-            }, 50);
-        });
-    }
-    
-    if (elements.btnOpenFriends) {
-        elements.btnOpenFriends.addEventListener('click', () => {
-            elements.viewCommunity.classList.remove('active');
-            setTimeout(() => {
-                elements.viewCommunity.classList.add('hidden');
-                document.getElementById('view-friends').classList.remove('hidden');
-                setTimeout(() => document.getElementById('view-friends').classList.add('active'), 10);
-            }, 50);
-        });
-    }
-    
-    if (elements.btnBackFromRanking) {
-        elements.btnBackFromRanking.addEventListener('click', () => {
-            elements.viewRanking.classList.remove('active');
-            setTimeout(() => {
-                elements.viewRanking.classList.add('hidden');
-                elements.viewCommunity.classList.remove('hidden');
-                setTimeout(() => elements.viewCommunity.classList.add('active'), 10);
-            }, 50);
-        });
-    }
-    
-    if (elements.btnBackFromFriends) {
-        elements.btnBackFromFriends.addEventListener('click', () => {
-            const friendsView = document.getElementById('view-friends');
-            friendsView.classList.remove('active');
-            setTimeout(() => {
-                friendsView.classList.add('hidden');
-                elements.viewCommunity.classList.remove('hidden');
-                setTimeout(() => elements.viewCommunity.classList.add('active'), 10);
-            }, 50);
-        });
-    }
 }
 
 // Messages Logic
@@ -1128,6 +1081,53 @@ async function searchFriends() {
 }
 
 function setupEventListeners() {
+    // Sub-view navigation for Community -> Ranking / Friends
+    if (elements.btnOpenRanking) {
+        elements.btnOpenRanking.addEventListener('click', () => {
+            elements.viewCommunity.classList.remove('active');
+            setTimeout(() => {
+                elements.viewCommunity.classList.add('hidden');
+                elements.viewRanking.classList.remove('hidden');
+                setTimeout(() => elements.viewRanking.classList.add('active'), 10);
+                renderRanking();
+            }, 50);
+        });
+    }
+    
+    if (elements.btnOpenFriends) {
+        elements.btnOpenFriends.addEventListener('click', () => {
+            elements.viewCommunity.classList.remove('active');
+            setTimeout(() => {
+                elements.viewCommunity.classList.add('hidden');
+                document.getElementById('view-friends').classList.remove('hidden');
+                setTimeout(() => document.getElementById('view-friends').classList.add('active'), 10);
+            }, 50);
+        });
+    }
+    
+    if (elements.btnBackFromRanking) {
+        elements.btnBackFromRanking.addEventListener('click', () => {
+            elements.viewRanking.classList.remove('active');
+            setTimeout(() => {
+                elements.viewRanking.classList.add('hidden');
+                elements.viewCommunity.classList.remove('hidden');
+                setTimeout(() => elements.viewCommunity.classList.add('active'), 10);
+            }, 50);
+        });
+    }
+    
+    if (elements.btnBackFromFriends) {
+        elements.btnBackFromFriends.addEventListener('click', () => {
+            const friendsView = document.getElementById('view-friends');
+            friendsView.classList.remove('active');
+            setTimeout(() => {
+                friendsView.classList.add('hidden');
+                elements.viewCommunity.classList.remove('hidden');
+                setTimeout(() => elements.viewCommunity.classList.add('active'), 10);
+            }, 50);
+        });
+    }
+
     // Auth UI Toggles
     if (elements.linkToRegister && elements.linkToLogin) {
         elements.linkToRegister.addEventListener('click', () => {
