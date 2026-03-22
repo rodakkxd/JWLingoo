@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, addDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDwba96XeU5xPwHJ8McK6DsP8O3cROWk",
@@ -112,6 +112,14 @@ const elements = {
     readStatus: document.getElementById('read-status'),
     navItems: document.querySelectorAll('.nav-item'),
     views: document.querySelectorAll('.view'),
+    
+    viewCommunity: document.getElementById('view-community'),
+    viewRanking: document.getElementById('view-ranking'),
+    btnOpenRanking: document.getElementById('btn-open-ranking'),
+    btnOpenFriends: document.getElementById('btn-open-friends'),
+    btnBackFromRanking: document.getElementById('btn-back-from-ranking'),
+    btnBackFromFriends: document.getElementById('btn-back-from-friends'),
+    rankingList: document.getElementById('ranking-list'),
     
     friendsList: document.getElementById('friends-list'),
     searchFriendInput: document.getElementById('search-friend-input'),
@@ -666,7 +674,7 @@ async function renderFriends() {
         elements.friendsList.appendChild(card);
     });
     
-    document.querySelectorAll('.btn-motivate').forEach(btn => {
+    document.querySelectorAll('#friends-list .btn-motivate').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const name = e.target.getAttribute('data-name');
             const msg = FUNNY_MESSAGES[Math.floor(Math.random() * FUNNY_MESSAGES.length)];
@@ -714,62 +722,56 @@ async function renderFriends() {
         });
     });
 
-    document.querySelectorAll('.btn-view-profile').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const name = e.currentTarget.getAttribute('data-username');
-            
-            elements.navItems.forEach(n => n.classList.remove('active'));
-            document.querySelectorAll('#main-app-container .view').forEach(view => {
-                view.classList.remove('active');
-                setTimeout(() => view.classList.add('hidden'), 50);
-            });
-            setTimeout(() => {
-                const profileView = document.getElementById('view-profile');
-                profileView.classList.remove('hidden');
-                setTimeout(() => profileView.classList.add('active'), 10);
-            }, 50);
-            
-            if (name === currentUser) {
-                elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
-                elements.profileUsernameDisplay.textContent = `@${currentUser}`;
-                elements.profileBioDisplay.textContent = state.bio || "Brak biografii...";
-                updateProfileAvatar();
-            } else {
-                elements.profileDisplayNameDisplay.textContent = "Ładowanie...";
-                elements.profileUsernameDisplay.textContent = `@${name}`;
-                elements.profileBioDisplay.textContent = "";
-                // Show friend's avatar from cache
-                const friendAvatar = friendAvatarCache[name]?.avatar || '';
-                const friendPos = friendAvatarCache[name]?.avatarPos || { x: 50, y: 50 };
-                if (friendAvatar) {
-                    const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
-                    elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[friendAvatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${friendPos.x}% ${friendPos.y}%;">`;
-                    elements.profileAvatarContainer.style.overflow = 'hidden';
-                } else {
-                    elements.profileAvatarContainer.innerHTML = '<i class="fa-solid fa-user"></i>';
-                }
-                
-                try {
-                    let docSnap = await getDoc(doc(db, "users", name.toLowerCase()));
-                    if (docSnap.exists()) {
-                        let uData = docSnap.data();
-                        elements.profileDisplayNameDisplay.textContent = uData.displayName || name;
-                        elements.profileBioDisplay.textContent = uData.bio || "Brak biografii...";
-                        // Update avatar from fresh data
-                        if (uData.avatar) {
-                            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
-                            const uPos = uData.avatarPos || { x: 50, y: 50 };
-                            elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[uData.avatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${uPos.x}% ${uPos.y}%;">`;
-                            elements.profileAvatarContainer.style.overflow = 'hidden';
-                        }
-                    }
-                } catch(err) {
-                    elements.profileDisplayNameDisplay.textContent = name;
-                    elements.profileBioDisplay.textContent = "Błąd.";
-                }
-            }
-        });
+    document.querySelectorAll('#friends-list .btn-view-profile').forEach(btn => {
+        btn.addEventListener('click', handleProfileViewClick);
     });
+
+    // Sub-view navigation for Community -> Ranking / Friends
+    if (elements.btnOpenRanking) {
+        elements.btnOpenRanking.addEventListener('click', () => {
+            elements.viewCommunity.classList.remove('active');
+            setTimeout(() => {
+                elements.viewCommunity.classList.add('hidden');
+                elements.viewRanking.classList.remove('hidden');
+                setTimeout(() => elements.viewRanking.classList.add('active'), 10);
+                renderRanking();
+            }, 50);
+        });
+    }
+    
+    if (elements.btnOpenFriends) {
+        elements.btnOpenFriends.addEventListener('click', () => {
+            elements.viewCommunity.classList.remove('active');
+            setTimeout(() => {
+                elements.viewCommunity.classList.add('hidden');
+                document.getElementById('view-friends').classList.remove('hidden');
+                setTimeout(() => document.getElementById('view-friends').classList.add('active'), 10);
+            }, 50);
+        });
+    }
+    
+    if (elements.btnBackFromRanking) {
+        elements.btnBackFromRanking.addEventListener('click', () => {
+            elements.viewRanking.classList.remove('active');
+            setTimeout(() => {
+                elements.viewRanking.classList.add('hidden');
+                elements.viewCommunity.classList.remove('hidden');
+                setTimeout(() => elements.viewCommunity.classList.add('active'), 10);
+            }, 50);
+        });
+    }
+    
+    if (elements.btnBackFromFriends) {
+        elements.btnBackFromFriends.addEventListener('click', () => {
+            const friendsView = document.getElementById('view-friends');
+            friendsView.classList.remove('active');
+            setTimeout(() => {
+                friendsView.classList.add('hidden');
+                elements.viewCommunity.classList.remove('hidden');
+                setTimeout(() => elements.viewCommunity.classList.add('active'), 10);
+            }, 50);
+        });
+    }
 }
 
 // Messages Logic
@@ -816,6 +818,110 @@ function fetchMessages() {
     }, (error) => {
         console.error("Fetch messages error:", error);
     });
+}
+
+async function renderRanking() {
+    elements.rankingList.innerHTML = '<p style="text-align:center; color:var(--text-light);">Odświeżanie rankingu...</p>';
+    
+    try {
+        const q = query(collection(db, "users"), orderBy("streak", "desc"), limit(100));
+        const querySnapshot = await getDocs(q);
+        
+        elements.rankingList.innerHTML = '';
+        let rank = 1;
+        
+        querySnapshot.forEach((docSnap) => {
+            const f = docSnap.data();
+            const card = document.createElement('div');
+            card.classList.add('friend-grid-card');
+            
+            let dName = f.displayName || f.username;
+            
+            // Medals for top 3
+            let rankDisplay = `${rank}.`;
+            if (rank === 1) rankDisplay = '<i class="fa-solid fa-medal" style="color: #ffd700; font-size: 1.5rem;"></i>';
+            else if (rank === 2) rankDisplay = '<i class="fa-solid fa-medal" style="color: #c0c0c0; font-size: 1.5rem;"></i>';
+            else if (rank === 3) rankDisplay = '<i class="fa-solid fa-medal" style="color: #cd7f32; font-size: 1.5rem;"></i>';
+            
+            card.innerHTML = `
+                <div style="font-size: 1.2rem; font-weight: 900; color: var(--text-light); width: 30px; text-align: center;">${rankDisplay}</div>
+                <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
+                <div class="friend-grid-name">${dName}</div>
+                <div class="friend-grid-streak"><i class="fa-solid fa-fire"></i> ${f.streak || 0} dni</div>
+            `;
+            
+            elements.rankingList.appendChild(card);
+            rank++;
+        });
+        
+        // Re-attach profile view listeners for ranking items
+        document.querySelectorAll('#ranking-list .btn-view-profile').forEach(btn => {
+            btn.addEventListener('click', handleProfileViewClick);
+        });
+        
+    } catch(e) {
+        console.error(e);
+        elements.rankingList.innerHTML = '<p style="text-align:center; color:var(--danger-color);">Błąd ładowania rankingu.</p>';
+    }
+}
+
+// Extracted handler for viewing profiles so it can be reused
+async function handleProfileViewClick(e) {
+    const name = e.currentTarget.getAttribute('data-username');
+    
+    // Hide everything
+    elements.navItems.forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('#main-app-container .view').forEach(view => {
+        view.classList.remove('active');
+        setTimeout(() => view.classList.add('hidden'), 50);
+    });
+    
+    // Show profile view
+    setTimeout(() => {
+        const profileView = document.getElementById('view-profile');
+        profileView.classList.remove('hidden');
+        setTimeout(() => profileView.classList.add('active'), 10);
+    }, 50);
+    
+    if (name === currentUser) {
+        elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
+        elements.profileUsernameDisplay.textContent = `@${currentUser}`;
+        elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
+        updateProfileAvatar();
+    } else {
+        elements.profileDisplayNameDisplay.textContent = "Ładowanie...";
+        elements.profileUsernameDisplay.textContent = `@${name}`;
+        elements.profileBioDisplay.textContent = "";
+        // Show friend's avatar from cache
+        const friendAvatar = friendAvatarCache[name]?.avatar || '';
+        const friendPos = friendAvatarCache[name]?.avatarPos || { x: 50, y: 50 };
+        if (friendAvatar) {
+            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+            elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[friendAvatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${friendPos.x}% ${friendPos.y}%;">`;
+            elements.profileAvatarContainer.style.overflow = 'hidden';
+        } else {
+            elements.profileAvatarContainer.innerHTML = '<i class="fa-solid fa-user"></i>';
+        }
+        
+        try {
+            let docSnap = await getDoc(doc(db, "users", name.toLowerCase()));
+            if (docSnap.exists()) {
+                let uData = docSnap.data();
+                elements.profileDisplayNameDisplay.textContent = uData.displayName || name;
+                elements.profileBioDisplay.textContent = uData.bio || "Tu jeszcze nic nie ma...";
+                // Update avatar from fresh data
+                if (uData.avatar) {
+                    const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+                    const uPos = uData.avatarPos || { x: 50, y: 50 };
+                    elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[uData.avatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${uPos.x}% ${uPos.y}%;">`;
+                    elements.profileAvatarContainer.style.overflow = 'hidden';
+                }
+            }
+        } catch(err) {
+            elements.profileDisplayNameDisplay.textContent = name;
+            elements.profileBioDisplay.textContent = "Błąd.";
+        }
+    }
 }
 
 function renderMessagesFriendsList() {

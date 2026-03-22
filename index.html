@@ -87,15 +87,43 @@
                 </div>
             </div>
 
-            <!-- View: Friends (Znajomi) -->
+            <!-- View: Community (Społeczność Hub) -->
+            <section id="view-community" class="view hidden" style="height: 100%; display: flex; flex-direction: column;">
+                <h2 class="view-title">Społeczność</h2>
+                <div style="display: flex; flex-direction: column; gap: 20px; flex: 1;">
+                    <div class="settings-card" id="btn-open-ranking" style="text-align: center; cursor: pointer; padding: 40px 20px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.2s;">
+                        <i class="fa-solid fa-trophy" style="font-size: 3.5rem; color: #f1c40f; margin-bottom: 15px;"></i>
+                        <h3 style="font-size: 1.8rem; font-weight: 900; color: var(--text-color); margin-bottom: 5px;">Ranking</h3>
+                        <p style="color: var(--text-light); font-weight: 600;">Sprawdź, kto ma najlepszą passę!</p>
+                    </div>
+                    <div class="settings-card" id="btn-open-friends" style="text-align: center; cursor: pointer; padding: 40px 20px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.2s;">
+                        <i class="fa-solid fa-user-group" style="font-size: 3.5rem; color: var(--primary-color); margin-bottom: 15px;"></i>
+                        <h3 style="font-size: 1.8rem; font-weight: 900; color: var(--text-color); margin-bottom: 5px;">Znajomi</h3>
+                        <p style="color: var(--text-light); font-weight: 600;">Motywuj i czatuj z przyjaciółmi.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Ranking (Sub-view) -->
+            <section id="view-ranking" class="view hidden" style="height: 100%; display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px;">
+                    <button id="btn-back-from-ranking" class="btn btn-secondary btn-small" style="padding: 8px 15px;"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2 class="view-title" style="margin-bottom: 0;">Globalny Ranking</h2>
+                </div>
+                <div class="friends-grid" id="ranking-list" style="flex: 1; overflow-y: auto; padding-bottom: 30px;">
+                    <p style="text-align:center; color:var(--text-light);">Wczytywanie rankingu...</p>
+                </div>
+            </section>
+
+            <!-- View: Friends (Sub-view Znajomi) -->
             <section id="view-friends" class="view hidden" style="height: 100%; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 class="view-title" style="margin-bottom: 0;">Twoi Znajomi</h2>
+                <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px;">
+                    <button id="btn-back-from-friends" class="btn btn-secondary btn-small" style="padding: 8px 15px;"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2 class="view-title" style="margin-bottom: 0; flex: 1;">Twoi Znajomi</h2>
                     <button id="btn-toggle-search" class="btn btn-secondary btn-small" style="background-color: var(--secondary-color); color: white; display: flex; gap: 8px; align-items: center; padding: 5px 16px; border-radius: 8px;">
                         <span>szukaj</span> <i class="fa-solid fa-search"></i>
                     </button>
                 </div>
-                
                 <!-- Search bar -->
                 <div id="search-friend-module" class="settings-card hidden" style="margin-bottom: 20px; padding: 16px;">
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -213,9 +241,9 @@
                 <div class="nav-icon-wrapper"><i class="fa-solid fa-book-open"></i></div>
                 <span>Czytaj</span>
             </button>
-            <button class="nav-item" data-target="view-friends">
-                <div class="nav-icon-wrapper"><i class="fa-solid fa-user-group"></i></div>
-                <span>Znajomi</span>
+            <button class="nav-item" data-target="view-community">
+                <div class="nav-icon-wrapper"><i class="fa-solid fa-users"></i></div>
+                <span>Społeczność</span>
             </button>
             <button class="nav-item" data-target="view-messages">
                 <div class="nav-icon-wrapper"><i class="fa-solid fa-envelope"></i></div>
