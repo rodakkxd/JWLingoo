@@ -53,7 +53,7 @@ async function setupNotifications() {
 
 function scheduleReadReminder() {
     if (!("Notification" in window)) return;
-    
+
     if (!isToday(state.lastReadDate)) {
         setTimeout(() => {
             if (!isToday(state.lastReadDate) && state.pushEnabled && Notification.permission === "granted") {
@@ -63,7 +63,7 @@ function scheduleReadReminder() {
                 });
             }
         }, 5000); // 5s after load
-        
+
         setInterval(() => {
             if (!isToday(state.lastReadDate) && Notification.permission === "granted") {
                 new Notification("JWLingo", {
@@ -104,7 +104,7 @@ const elements = {
     btnLogin: document.getElementById('btn-login'),
     loginError: document.getElementById('login-error'),
     linkToRegister: document.getElementById('link-to-register'),
-    
+
     authRegisterForm: document.getElementById('auth-register-form'),
     registerUsername: document.getElementById('register-username'),
     registerDisplayname: document.getElementById('register-displayname'),
@@ -112,7 +112,7 @@ const elements = {
     btnRegister: document.getElementById('btn-register'),
     registerError: document.getElementById('register-error'),
     linkToLogin: document.getElementById('link-to-login'),
-    
+
     streakCount: document.getElementById('streak-count'),
     xpCount: document.getElementById('xp-count'),
     btnOpenProfile: document.getElementById('btn-open-profile'),
@@ -122,7 +122,7 @@ const elements = {
     readStatus: document.getElementById('read-status'),
     navItems: document.querySelectorAll('.nav-item'),
     views: document.querySelectorAll('.view'),
-    
+
     viewCommunity: document.getElementById('view-community'),
     viewRanking: document.getElementById('view-ranking'),
     btnOpenRanking: document.getElementById('btn-open-ranking'),
@@ -131,14 +131,14 @@ const elements = {
     btnBackFromRanking: document.getElementById('btn-back-from-ranking'),
     btnBackFromFriends: document.getElementById('btn-back-from-friends'),
     rankingList: document.getElementById('ranking-list'),
-    
+
     friendsList: document.getElementById('friends-list'),
     searchFriendInput: document.getElementById('search-friend-input'),
     btnSearchFriend: document.getElementById('btn-search-friend'),
     btnToggleSearch: document.getElementById('btn-toggle-search'),
     searchFriendModule: document.getElementById('search-friend-module'),
     searchResults: document.getElementById('search-results'),
-    
+
     messagesFriendsList: document.getElementById('messages-friends-list'),
     chatInterface: document.getElementById('chat-interface'),
     btnBackToMessages: document.getElementById('btn-back-to-messages'),
@@ -146,13 +146,13 @@ const elements = {
     chatMessages: document.getElementById('chat-messages'),
     chatInput: document.getElementById('chat-input'),
     btnSendMessage: document.getElementById('btn-send-message'),
-    
+
     profileDisplayNameDisplay: document.getElementById('profile-displayname-display'),
     profileUsernameDisplay: document.getElementById('profile-username-display'),
     profileBioDisplay: document.getElementById('profile-bio-display'),
     profileAvatarContainer: document.getElementById('profile-avatar-container'),
     profileEditControls: document.getElementById('profile-edit-controls'),
-    
+
     settingsUsernameDisplay: document.getElementById('settings-username-display'),
     settingsDisplayNameInput: document.getElementById('settings-display-name-input'),
     settingsBioInput: document.getElementById('settings-bio-input'),
@@ -163,16 +163,16 @@ const elements = {
     themeToggle: document.getElementById('theme-toggle'),
     pushToggle: document.getElementById('push-toggle'),
     btnReset: document.getElementById('btn-reset'),
-    
+
     avatarModal: document.getElementById('avatar-modal'),
     btnCloseAvatarModal: document.getElementById('btn-close-avatar-modal'),
-    
+
     avatarCropModal: document.getElementById('avatar-crop-modal'),
     cropContainer: document.getElementById('crop-container'),
     cropImage: document.getElementById('crop-image'),
     btnCropSave: document.getElementById('btn-crop-save'),
     btnCropCancel: document.getElementById('btn-crop-cancel'),
-    
+
     modal: document.getElementById('achievement-modal'),
     modalTitle: document.getElementById('modal-title'),
     modalText: document.getElementById('modal-text'),
@@ -212,26 +212,26 @@ async function fetchDailyText() {
         const data = await response.json();
         let fullText = data.filter(d => d.page >= 9).map(d => d.content).join(' ');
         fullText = decodeText(fullText);
-        
+
         const today = new Date();
         const normalMonths = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "września", "października", "listopada", "grudnia"];
-        
+
         const currentTargetRegex = new RegExp(`(?:Niedziela|Poniedziałek|Wtorek|Środa|Czwartek|Piątek|Sobota)\\s+${today.getDate()}\\s+${normalMonths[today.getMonth()]}`, 'i');
         const match = currentTargetRegex.exec(fullText);
-        
+
         if (match) {
             let startIndex = match.index + match[0].length;
             const remainingText = fullText.substring(startIndex);
             const nextDateRegex = new RegExp(`(?:Niedziela|Poniedziałek|Wtorek|Środa|Czwartek|Piątek|Sobota)\\s+\\d{1,2}\\s+(?:${normalMonths.join('|')})`, 'i');
             const nextMatch = nextDateRegex.exec(remainingText);
-            
+
             let rawDaily = "";
             if (nextMatch) {
                 rawDaily = remainingText.substring(0, nextMatch.index);
             } else {
                 rawDaily = remainingText;
             }
-            
+
             rawDaily = rawDaily.trim();
             // Splitting daily text and source/commentary.
             let splitIndex = rawDaily.indexOf(').');
@@ -263,7 +263,7 @@ function showInstallPrompt() {
 // Initialization
 async function init() {
     setupEventListeners();
-    
+
     let session = localStorage.getItem('jwlingo_session');
     if (session) {
         try {
@@ -274,9 +274,9 @@ async function init() {
                 localStorage.removeItem('jwlingo_session');
                 showAuthView();
             }
-        } catch(e) {
+        } catch (e) {
             console.error(e);
-            showAuthView(); 
+            showAuthView();
         }
     } else {
         showAuthView();
@@ -291,8 +291,8 @@ function showAuthView() {
 
 function handleLoginSuccess(userData) {
     currentUser = userData.username;
-    
-    state = { 
+
+    state = {
         streak: userData.streak || 0,
         lastReadDate: userData.lastReadDate || null,
         theme: userData.theme || "light",
@@ -305,19 +305,19 @@ function handleLoginSuccess(userData) {
         pushEnabled: userData.pushEnabled || false,
         xp: userData.xp !== undefined ? userData.xp : (userData.streak || 0) * 20
     };
-    
+
     // Retroactive migration for existing users
     if (userData.xp === undefined) {
         updateDoc(doc(db, "users", currentUser.toLowerCase()), { xp: state.xp }).catch(console.error);
     }
-    
+
     if (elements.settingsDisplayNameInput) {
         elements.settingsDisplayNameInput.value = state.displayName;
     }
     if (elements.settingsBioInput) {
         elements.settingsBioInput.value = state.bio;
     }
-    
+
     if (state.theme === 'dark') {
         document.body.setAttribute('data-theme', 'dark');
         elements.themeToggle.checked = true;
@@ -325,36 +325,36 @@ function handleLoginSuccess(userData) {
         document.body.removeAttribute('data-theme');
         elements.themeToggle.checked = false;
     }
-    
+
     if (elements.pushToggle) {
         // Only show as checked if both state is true AND browser permits it (or hasn't denied it completely)
         elements.pushToggle.checked = state.pushEnabled && Notification.permission !== 'denied';
     }
-    
+
     elements.settingsUsernameDisplay.textContent = currentUser;
-    
+
     elements.viewAuth.classList.add('hidden');
     elements.viewAuth.classList.remove('active');
     elements.mainAppContainer.classList.remove('hidden');
-    
+
     updateUI();
     checkStreakReset();
     renderFriends();
-    
+
     setupNotifications();
     scheduleReadReminder();
-    
+
     fetchMessages();
-    
+
     checkIfReadToday();
-    
+
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     const today = new Date().toLocaleDateString('pl-PL', options);
     document.getElementById('daily-text-date').textContent = today;
-    
+
     fetchDailyText();
     showInstallPrompt();
-    
+
     // Listen for ban/deactivate/delete while logged in
     userDocUnsubscribe = onSnapshot(doc(db, "users", currentUser.toLowerCase()), (docSnap) => {
         if (docSnap.exists()) {
@@ -384,7 +384,7 @@ async function saveState() {
             pushEnabled: state.pushEnabled,
             xp: state.xp
         });
-    } catch(e) {
+    } catch (e) {
         console.error("Save Error:", e);
     }
 }
@@ -392,7 +392,7 @@ async function saveState() {
 function updateUI() {
     elements.streakCount.textContent = state.streak;
     if (elements.xpCount) elements.xpCount.textContent = state.xp || 0;
-    
+
     if (state.displayName) {
         elements.greetingDisplayName.textContent = state.displayName;
         elements.greetingUsername.textContent = `@${currentUser}`;
@@ -401,7 +401,7 @@ function updateUI() {
         elements.greetingDisplayName.textContent = currentUser;
         elements.greetingUsername.style.display = 'none';
     }
-    
+
     // Update profile avatar
     updateProfileAvatar();
 }
@@ -411,7 +411,8 @@ function getAvatarHTML(avatarName, size = 40, avatarPos = null) {
         'lina': 'lina.PNG',
         'kuba': 'kuba.PNG',
         'tosia': 'tosia.PNG',
-        'gabrys': 'gabrys.PNG'
+        'gabrys': 'gabrys.PNG',
+        'alice': 'alice.png'
     };
     if (avatarName && AVATAR_MAP[avatarName]) {
         const pos = avatarPos || { x: 50, y: 50 };
@@ -426,7 +427,8 @@ function updateProfileAvatar() {
         'lina': 'lina.PNG',
         'kuba': 'kuba.PNG',
         'tosia': 'tosia.PNG',
-        'gabrys': 'gabrys.PNG'
+        'gabrys': 'gabrys.PNG',
+        'alice': 'alice.png'
     };
     if (state.avatar && AVATAR_MAP[state.avatar]) {
         const pos = state.avatarPos || { x: 50, y: 50 };
@@ -443,8 +445,8 @@ function isToday(dateString) {
     const date = new Date(dateString);
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
 }
 
 function isYesterday(dateString) {
@@ -453,8 +455,8 @@ function isYesterday(dateString) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     return date.getDate() === yesterday.getDate() &&
-           date.getMonth() === yesterday.getMonth() &&
-           date.getFullYear() === yesterday.getFullYear();
+        date.getMonth() === yesterday.getMonth() &&
+        date.getFullYear() === yesterday.getFullYear();
 }
 
 function checkStreakReset() {
@@ -491,7 +493,7 @@ async function handleRead() {
         setTimeout(() => { elements.btnRead.style.transform = 'scale(1)'; }, 200);
         return;
     }
-    
+
     // Phase 2: Show quiz before completing reading
     elements.btnRead.setAttribute('data-phase', '');
     await showQuiz();
@@ -499,21 +501,21 @@ async function handleRead() {
 
 async function completeReading() {
     if (isToday(state.lastReadDate)) return;
-    
+
     if (isYesterday(state.lastReadDate) || state.streak === 0) {
         state.streak += 1;
     } else {
         state.streak = 1;
     }
-    
+
     state.lastReadDate = new Date().toISOString();
     state.xp = (state.xp || 0) + 20;
     await saveState();
-    
+
     updateUI();
     checkIfReadToday();
     createConfetti();
-    
+
     if (MILESTONES.includes(state.streak)) {
         if (!state.achievements.includes(state.streak)) {
             state.achievements.push(state.streak);
@@ -530,7 +532,7 @@ async function loadQuizData() {
     try {
         const res = await fetch('quiz.json');
         quizData = await res.json();
-    } catch(e) { quizData = []; }
+    } catch (e) { quizData = []; }
     return quizData;
 }
 
@@ -538,28 +540,28 @@ async function showQuiz() {
     const data = await loadQuizData();
     const todayStr = new Date().toISOString().slice(0, 10);
     const q = data.find(item => item.date === todayStr);
-    
+
     if (!q) {
         // No quiz for today - just complete reading directly
         closeQuiz();
         completeReading();
         return;
     }
-    
+
     const overlay = document.getElementById('quiz-overlay');
     const questionEl = document.getElementById('quiz-question');
     const answersEl = document.getElementById('quiz-answers');
     const resultBar = document.getElementById('quiz-result-bar');
     const progressBar = document.getElementById('quiz-progress-bar');
-    
+
     overlay.classList.remove('hidden');
     resultBar.classList.add('hidden');
     resultBar.className = 'hidden';
     progressBar.style.width = '0%';
-    
+
     questionEl.textContent = q.question;
     answersEl.innerHTML = '';
-    
+
     const letters = ['A', 'B', 'C', 'D'];
     letters.forEach(letter => {
         const btn = document.createElement('button');
@@ -573,13 +575,13 @@ async function showQuiz() {
 function handleQuizAnswer(chosen, correct, clickedBtn) {
     const allBtns = document.querySelectorAll('.quiz-answer-btn');
     allBtns.forEach(b => b.disabled = true);
-    
+
     const resultBar = document.getElementById('quiz-result-bar');
     const resultText = document.getElementById('quiz-result-text');
     const progressBar = document.getElementById('quiz-progress-bar');
-    
+
     progressBar.style.width = '100%';
-    
+
     if (chosen === correct) {
         clickedBtn.classList.add('correct');
         resultBar.style.padding = '20px';
@@ -602,7 +604,7 @@ function handleQuizAnswer(chosen, correct, clickedBtn) {
         resultBar.className = 'quiz-result-wrong';
         resultText.textContent = `Nie tym razem. Poprawna odpowiedź to: ${correct}`;
     }
-    
+
     resultBar.innerHTML = `<p id="quiz-result-text" style="font-size: 1.2rem; font-weight: 900; margin-bottom: 15px;">${resultText.textContent}</p><button id="btn-quiz-continue" class="btn btn-primary btn-chunky">Dalej</button>`;
     document.getElementById('btn-quiz-continue').addEventListener('click', () => {
         closeQuiz();
@@ -617,7 +619,7 @@ function closeQuiz() {
 function createConfetti() {
     elements.confettiContainer.innerHTML = '';
     const colors = ['#8e24aa', '#1cb0f6', '#ffc800', '#ff4b4b'];
-    
+
     for (let i = 0; i < 50; i++) {
         const confetti = document.createElement('div');
         confetti.classList.add('confetti');
@@ -627,7 +629,7 @@ function createConfetti() {
         confetti.style.opacity = Math.random() + 0.5;
         elements.confettiContainer.appendChild(confetti);
     }
-    
+
     setTimeout(() => {
         elements.confettiContainer.innerHTML = '';
     }, 3000);
@@ -644,7 +646,7 @@ function showToast(message) {
     toast.classList.add('toast');
     toast.textContent = message;
     elements.toastContainer.appendChild(toast);
-    
+
     setTimeout(() => {
         if (toast.parentNode) toast.remove();
     }, 3000);
@@ -656,7 +658,7 @@ async function renderFriends() {
         elements.friendsList.innerHTML = '<p style="text-align:center; color:var(--text-light); font-weight:700;">Nie masz jeszcze znajomych. Wyszukaj kogoś powyżej!</p>';
         return;
     }
-    
+
     let fetchedFriends = [];
     for (let friendUsername of state.friends) {
         try {
@@ -667,24 +669,24 @@ async function renderFriends() {
                     fetchedFriends.push(f);
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.error(e);
         }
     }
-    
+
     elements.friendsList.innerHTML = '';
-    
+
     // Cache friend avatars for messages list
     fetchedFriends.forEach(f => {
         friendAvatarCache[f.username] = { avatar: f.avatar || '', avatarPos: f.avatarPos || { x: 50, y: 50 } };
     });
-    
+
     fetchedFriends.forEach(f => {
         const card = document.createElement('div');
         card.classList.add('friend-grid-card');
-        
+
         let dName = f.displayName || f.username;
-        
+
         card.innerHTML = `
             <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
             <div class="friend-grid-name">${dName}</div>
@@ -697,16 +699,16 @@ async function renderFriends() {
                 <button class="btn btn-secondary btn-small btn-chat" data-name="${f.username}" style="background-color: var(--secondary-color);">czatuj</button>
             </div>
         `;
-        
+
         elements.friendsList.appendChild(card);
     });
-    
+
     document.querySelectorAll('#friends-list .btn-motivate').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const name = e.target.getAttribute('data-name');
             const msg = FUNNY_MESSAGES[Math.floor(Math.random() * FUNNY_MESSAGES.length)];
             showToast(`Wysłano motywację do ${name}: "${msg}"`);
-            
+
             // Send as a message
             try {
                 await addDoc(collection(db, "messages"), {
@@ -724,11 +726,11 @@ async function renderFriends() {
     document.querySelectorAll('.btn-chat').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const name = e.target.getAttribute('data-name');
-            
+
             elements.navItems.forEach(nav => nav.classList.remove('active'));
             const msgNav = document.querySelector('.nav-item[data-target="view-messages"]');
             if (msgNav) msgNav.classList.add('active');
-            
+
             document.querySelectorAll('#main-app-container .view').forEach(view => {
                 view.classList.remove('active');
                 view.classList.add('hidden');
@@ -736,13 +738,13 @@ async function renderFriends() {
             const msgView = document.getElementById('view-messages');
             msgView.classList.remove('hidden');
             msgView.classList.add('active');
-            
+
             elements.messagesFriendsList.classList.add('hidden');
             elements.chatInterface.classList.remove('hidden');
             currentChatFriend = name;
             elements.chatWithName.textContent = name;
             renderChat(name);
-            
+
             setTimeout(() => {
                 elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
             }, 50);
@@ -757,18 +759,18 @@ async function renderFriends() {
 // Messages Logic
 function fetchMessages() {
     if (!currentUser) return;
-    
+
     if (messagesUnsubscribe) {
         messagesUnsubscribe();
     }
-    
+
     let q = query(
         collection(db, "messages"),
         where("participants", "array-contains", currentUser)
     );
-    
+
     initialMessagesLoaded = false;
-    
+
     messagesUnsubscribe = onSnapshot(q, (snapshot) => {
         let msgs = [];
         snapshot.forEach(docSnap => {
@@ -776,7 +778,7 @@ function fetchMessages() {
         });
         msgs.sort((a, b) => a.timestamp - b.timestamp);
         allMessages = msgs;
-        
+
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added" && initialMessagesLoaded) {
                 let m = change.doc.data();
@@ -788,9 +790,9 @@ function fetchMessages() {
                 }
             }
         });
-        
+
         initialMessagesLoaded = true;
-        
+
         if (currentChatFriend) {
             renderChat(currentChatFriend);
         }
@@ -802,28 +804,28 @@ function fetchMessages() {
 
 async function renderRanking() {
     elements.rankingList.innerHTML = '<p style="text-align:center; color:var(--text-light);">Odświeżanie rankingu...</p>';
-    
+
     try {
         const q = query(collection(db, "users"), where("xp", ">", 0), orderBy("xp", "desc"), limit(100));
         const querySnapshot = await getDocs(q);
-        
+
         elements.rankingList.innerHTML = '';
         let rank = 1;
-        
+
         querySnapshot.forEach((docSnap) => {
             const f = docSnap.data();
             if (f.status === 'deleted' || f.status === 'deactivated' || f.status === 'banned') return;
             const card = document.createElement('div');
             card.classList.add('friend-grid-card');
-            
+
             let dName = f.displayName || f.username;
-            
+
             // Medals for top 3
             let rankDisplay = `${rank}.`;
             if (rank === 1) rankDisplay = '<i class="fa-solid fa-medal" style="color: #ffd700; font-size: 1.5rem;"></i>';
             else if (rank === 2) rankDisplay = '<i class="fa-solid fa-medal" style="color: #c0c0c0; font-size: 1.5rem;"></i>';
             else if (rank === 3) rankDisplay = '<i class="fa-solid fa-medal" style="color: #cd7f32; font-size: 1.5rem;"></i>';
-            
+
             card.innerHTML = `
                 <div style="font-size: 1.2rem; font-weight: 900; color: var(--text-light); width: 30px; text-align: center;">${rankDisplay}</div>
                 <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
@@ -833,17 +835,17 @@ async function renderRanking() {
                     <span title="Punkty Doświadczenia"><i class="fa-solid fa-star" style="color: #f1c40f;"></i> ${f.xp || 0} XP</span>
                 </div>
             `;
-            
+
             elements.rankingList.appendChild(card);
             rank++;
         });
-        
+
         // Re-attach profile view listeners for ranking items
         document.querySelectorAll('#ranking-list .btn-view-profile').forEach(btn => {
             btn.addEventListener('click', handleProfileViewClick);
         });
-        
-    } catch(e) {
+
+    } catch (e) {
         console.error(e);
         elements.rankingList.innerHTML = '<p style="text-align:center; color:var(--danger-color);">Błąd ładowania rankingu.</p>';
     }
@@ -852,26 +854,26 @@ async function renderRanking() {
 // Extracted handler for viewing profiles so it can be reused
 async function handleProfileViewClick(e) {
     const name = e.currentTarget.getAttribute('data-username');
-    
+
     // Hide everything
     elements.navItems.forEach(n => n.classList.remove('active'));
     document.querySelectorAll('#main-app-container .view').forEach(view => {
         view.classList.remove('active');
         setTimeout(() => view.classList.add('hidden'), 50);
     });
-    
+
     // Show profile view
     setTimeout(() => {
         const profileView = document.getElementById('view-profile');
         profileView.classList.remove('hidden');
         setTimeout(() => profileView.classList.add('active'), 10);
     }, 50);
-    
+
     if (name === currentUser) {
         if (elements.profileEditControls) elements.profileEditControls.style.display = 'block';
         if (elements.btnSetAvatar) elements.btnSetAvatar.style.display = 'inline-block';
         if (elements.profileAvatarContainer) elements.profileAvatarContainer.style.cursor = 'pointer';
-        
+
         elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
         elements.profileUsernameDisplay.textContent = `@${currentUser}`;
         elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
@@ -880,7 +882,7 @@ async function handleProfileViewClick(e) {
         if (elements.profileEditControls) elements.profileEditControls.style.display = 'none';
         if (elements.btnSetAvatar) elements.btnSetAvatar.style.display = 'none';
         if (elements.profileAvatarContainer) elements.profileAvatarContainer.style.cursor = 'default';
-        
+
         elements.profileDisplayNameDisplay.textContent = "Ładowanie...";
         elements.profileUsernameDisplay.textContent = `@${name}`;
         elements.profileBioDisplay.textContent = "";
@@ -888,13 +890,13 @@ async function handleProfileViewClick(e) {
         const friendAvatar = friendAvatarCache[name]?.avatar || '';
         const friendPos = friendAvatarCache[name]?.avatarPos || { x: 50, y: 50 };
         if (friendAvatar) {
-            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG', 'alice': 'alice.png' };
             elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[friendAvatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${friendPos.x}% ${friendPos.y}%;">`;
             elements.profileAvatarContainer.style.overflow = 'hidden';
         } else {
             elements.profileAvatarContainer.innerHTML = '<i class="fa-solid fa-user"></i>';
         }
-        
+
         try {
             let docSnap = await getDoc(doc(db, "users", name.toLowerCase()));
             if (docSnap.exists()) {
@@ -903,13 +905,13 @@ async function handleProfileViewClick(e) {
                 elements.profileBioDisplay.textContent = uData.bio || "Tu jeszcze nic nie ma...";
                 // Update avatar from fresh data
                 if (uData.avatar) {
-                    const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+                    const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG', 'alice': 'alice.png' };
                     const uPos = uData.avatarPos || { x: 50, y: 50 };
                     elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[uData.avatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${uPos.x}% ${uPos.y}%;">`;
                     elements.profileAvatarContainer.style.overflow = 'hidden';
                 }
             }
-        } catch(err) {
+        } catch (err) {
             elements.profileDisplayNameDisplay.textContent = name;
             elements.profileBioDisplay.textContent = "Błąd.";
         }
@@ -918,21 +920,21 @@ async function handleProfileViewClick(e) {
 
 function renderMessagesFriendsList() {
     elements.messagesFriendsList.innerHTML = '';
-    
+
     if (!state.friends || state.friends.length === 0) {
         elements.messagesFriendsList.innerHTML = '<p style="text-align:center; color:var(--text-light); font-weight:700;">Nie masz jeszcze znajomych, do których mógłbyś napisać.</p>';
         return;
     }
-    
+
     state.friends.forEach(friendUsername => {
         const card = document.createElement('div');
         card.classList.add('friend-card');
         card.style.cursor = 'pointer';
-        
+
         // Find last message
         let friendMsgs = allMessages.filter(m => m.participants.includes(friendUsername));
         let lastMsg = friendMsgs.length > 0 ? friendMsgs[friendMsgs.length - 1].text : "Kliknij, aby napisać...";
-        
+
         card.innerHTML = `
             <div class="friend-info">
                 <div class="friend-avatar" style="${friendAvatarCache[friendUsername]?.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(friendAvatarCache[friendUsername]?.avatar, 40, friendAvatarCache[friendUsername]?.avatarPos)}</div>
@@ -943,20 +945,20 @@ function renderMessagesFriendsList() {
             </div>
             <i class="fa-solid fa-chevron-right" style="color: var(--text-light);"></i>
         `;
-        
+
         card.addEventListener('click', () => {
             elements.messagesFriendsList.classList.add('hidden');
             elements.chatInterface.classList.remove('hidden');
             currentChatFriend = friendUsername;
             elements.chatWithName.textContent = friendUsername;
             renderChat(friendUsername);
-            
+
             // Auto scroll to bottom
             setTimeout(() => {
                 elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
             }, 50);
         });
-        
+
         elements.messagesFriendsList.appendChild(card);
     });
 }
@@ -964,37 +966,37 @@ function renderMessagesFriendsList() {
 function renderChat(friendUsername) {
     elements.chatMessages.innerHTML = '';
     let friendMsgs = allMessages.filter(m => m.participants.includes(friendUsername));
-    
+
     if (friendMsgs.length === 0) {
         elements.chatMessages.innerHTML = '<p style="text-align:center; color:var(--text-light); font-weight:600; margin-top: 20px;">Brak wiadomości. Napisz coś!</p>';
         return;
     }
-    
+
     friendMsgs.forEach(m => {
         const bubble = document.createElement('div');
         const isSent = m.sender === currentUser;
         bubble.classList.add('chat-bubble', isSent ? 'sent' : 'received');
-        
+
         const date = new Date(m.timestamp);
         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-        
+
         bubble.innerHTML = `
             <div>${m.text}</div>
             <div class="chat-timestamp">${timeStr}</div>
         `;
-        
+
         elements.chatMessages.appendChild(bubble);
     });
-    
+
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 }
 
 async function sendChatMessage() {
     let text = elements.chatInput.value.trim();
     if (!text || !currentChatFriend) return;
-    
+
     elements.btnSendMessage.disabled = true;
-    
+
     try {
         let newMsg = {
             participants: [currentUser, currentChatFriend],
@@ -1002,12 +1004,12 @@ async function sendChatMessage() {
             text: text,
             timestamp: Date.now()
         };
-        
+
         let docRef = await addDoc(collection(db, "messages"), newMsg);
         // onSnapshot will handle UI rendering!
-        
+
         elements.chatInput.value = '';
-    } catch(err) {
+    } catch (err) {
         console.error("Send message error:", err);
         showToast("Nie udało się wysłać.");
     } finally {
@@ -1020,9 +1022,9 @@ async function searchFriends() {
     let q = elements.searchFriendInput.value.trim().toLowerCase();
     elements.searchResults.innerHTML = '';
     if (!q) return;
-    
+
     elements.searchResults.innerHTML = '<p style="color:var(--text-light);">Szukanie w chmurze...</p>';
-    
+
     try {
         let snapshot = await getDocs(collection(db, "users"));
         let found = [];
@@ -1033,13 +1035,13 @@ async function searchFriends() {
                 found.push(u);
             }
         });
-        
+
         elements.searchResults.innerHTML = '';
         if (found.length === 0) {
             elements.searchResults.innerHTML = '<p style="font-weight:700; color:var(--text-light);">Nie znaleziono użytkownika.</p>';
             return;
         }
-        
+
         found.forEach(f => {
             let isFriend = state.friends && state.friends.includes(f.username);
             let div = document.createElement('div');
@@ -1054,31 +1056,31 @@ async function searchFriends() {
             `;
             elements.searchResults.appendChild(div);
         });
-        
+
         document.querySelectorAll('.btn-add-friend').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 let name = e.target.getAttribute('data-name');
                 btn.disabled = true;
                 btn.textContent = "...";
-                
-                if(!state.friends) state.friends = [];
+
+                if (!state.friends) state.friends = [];
                 state.friends.push(name);
                 await saveState();
-                
+
                 try {
                     await updateDoc(doc(db, "users", name.toLowerCase()), {
                         friends: arrayUnion(currentUser)
                     });
-                } catch(err) {
+                } catch (err) {
                     console.log("Friend update err:", err);
                 }
-                
+
                 showToast(`Dodano ${name} do znajomych!`);
                 renderFriends();
                 searchFriends();
             });
         });
-    } catch(err) {
+    } catch (err) {
         console.error(err);
         elements.searchResults.innerHTML = '<p style="color:var(--danger-color);">Błąd pobierania danych.</p>';
     }
@@ -1097,7 +1099,7 @@ function setupEventListeners() {
             }, 50);
         });
     }
-    
+
     if (elements.btnOpenFriends) {
         elements.btnOpenFriends.addEventListener('click', () => {
             elements.viewCommunity.classList.remove('active');
@@ -1108,7 +1110,7 @@ function setupEventListeners() {
             }, 50);
         });
     }
-    
+
     if (elements.btnBackFromRanking) {
         elements.btnBackFromRanking.addEventListener('click', () => {
             elements.viewRanking.classList.remove('active');
@@ -1119,7 +1121,7 @@ function setupEventListeners() {
             }, 50);
         });
     }
-    
+
     if (elements.btnBackFromFriends) {
         elements.btnBackFromFriends.addEventListener('click', () => {
             const friendsView = document.getElementById('view-friends');
@@ -1139,7 +1141,7 @@ function setupEventListeners() {
             elements.authRegisterForm.classList.remove('hidden');
             elements.loginError.classList.add('hidden');
         });
-        
+
         elements.linkToLogin.addEventListener('click', () => {
             elements.authRegisterForm.classList.add('hidden');
             elements.authLoginForm.classList.remove('hidden');
@@ -1152,29 +1154,29 @@ function setupEventListeners() {
         elements.btnLogin.addEventListener('click', async () => {
             let userStr = elements.loginUsername.value.trim();
             let passStr = elements.loginPassword.value.trim();
-            
+
             // Admin redirect bypass
             if (userStr === "admin1" && passStr === "rodakkrul") {
                 window.location.href = "admin.html";
                 return;
             }
-            
+
             if (!userStr || !passStr) {
                 elements.loginError.textContent = "Wypełnij oba pola!";
                 elements.loginError.classList.remove('hidden');
                 return;
             }
-            
+
             elements.btnLogin.disabled = true;
             elements.btnLogin.textContent = "Logowanie...";
-            
+
             try {
                 let userDocRef = doc(db, "users", userStr.toLowerCase());
                 let docSnap = await getDoc(userDocRef);
-                
+
                 if (docSnap.exists()) {
                     let userData = docSnap.data();
-                    
+
                     if (userData.status === 'banned') {
                         elements.loginError.textContent = "Konto zablokowane do odwołania";
                         elements.loginError.classList.remove('hidden');
@@ -1221,20 +1223,20 @@ function setupEventListeners() {
             let userStr = elements.registerUsername.value.trim();
             let passStr = elements.registerPassword.value.trim();
             let dispStr = elements.registerDisplayname.value.trim();
-            
+
             if (!userStr || !passStr) {
                 elements.registerError.textContent = "Nazwa i hasło są wymagane!";
                 elements.registerError.classList.remove('hidden');
                 return;
             }
-            
+
             elements.btnRegister.disabled = true;
             elements.btnRegister.textContent = "Tworzenie konta...";
-            
+
             try {
                 let userDocRef = doc(db, "users", userStr.toLowerCase());
                 let docSnap = await getDoc(userDocRef);
-                
+
                 if (docSnap.exists()) {
                     elements.registerError.textContent = "Użytkownik o tej nazwie już istnieje!";
                     elements.registerError.classList.remove('hidden');
@@ -1278,7 +1280,7 @@ function setupEventListeners() {
                 text: 'Czytaj razem ze mna tekst dzienny :)',
                 url: 'https://jwlingo.vercel.app'
             };
-            
+
             try {
                 if (navigator.share) {
                     await navigator.share(shareData);
@@ -1298,7 +1300,7 @@ function setupEventListeners() {
         item.addEventListener('click', () => {
             elements.navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
-            
+
             const targetView = item.getAttribute('data-target');
             document.querySelectorAll('#main-app-container .view').forEach(view => {
                 view.classList.remove('active');
@@ -1311,13 +1313,13 @@ function setupEventListeners() {
                     }
                 }, 50);
             });
-            
+
             // Populate profile data when Profile tab is opened
             if (targetView === 'view-profile' && currentUser) {
                 if (elements.profileEditControls) elements.profileEditControls.style.display = 'block';
                 if (elements.btnSetAvatar) elements.btnSetAvatar.style.display = 'inline-block';
                 if (elements.profileAvatarContainer) elements.profileAvatarContainer.style.cursor = 'pointer';
-                
+
                 elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
                 elements.profileUsernameDisplay.textContent = `@${currentUser}`;
                 elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
@@ -1333,7 +1335,7 @@ function setupEventListeners() {
     elements.btnCloseModal.addEventListener('click', () => {
         elements.modal.classList.add('hidden');
     });
-    
+
     // Avatar selection
     if (elements.btnSetAvatar) {
         elements.btnSetAvatar.addEventListener('click', () => {
@@ -1351,37 +1353,37 @@ function setupEventListeners() {
             elements.avatarModal.classList.remove('hidden');
         });
     }
-    
+
     if (elements.btnCloseAvatarModal) {
         elements.btnCloseAvatarModal.addEventListener('click', () => {
             elements.avatarModal.classList.add('hidden');
         });
     }
-    
+
     // Avatar option click handlers — open crop modal instead of saving directly
     document.querySelectorAll('.avatar-option').forEach(opt => {
         opt.addEventListener('click', () => {
             const avatarName = opt.getAttribute('data-avatar');
-            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG', 'alice': 'alice.png' };
             pendingAvatar = avatarName;
-            
+
             // Load image in crop modal
             elements.cropImage.src = AVATAR_MAP[avatarName];
             // Reset position to center
             elements.cropImage.style.left = '0px';
             elements.cropImage.style.top = '0px';
             cropDragState = { dragging: false, startX: 0, startY: 0, imgX: 0, imgY: 0 };
-            
+
             elements.avatarModal.classList.add('hidden');
             elements.avatarCropModal.classList.remove('hidden');
-            
+
             // Wait for image to load to center it
             elements.cropImage.onload = () => {
                 const container = elements.cropContainer;
                 const img = elements.cropImage;
                 const cW = container.clientWidth;
                 const cH = container.clientHeight;
-                
+
                 // Scale image to cover the container
                 const imgRatio = img.naturalWidth / img.naturalHeight;
                 const cRatio = cW / cH;
@@ -1397,7 +1399,7 @@ function setupEventListeners() {
                 img.style.height = renderH + 'px';
                 img.style.minWidth = 'unset';
                 img.style.minHeight = 'unset';
-                
+
                 // Center
                 const offsetX = -(renderW - cW) / 2;
                 const offsetY = -(renderH - cH) / 2;
@@ -1407,7 +1409,7 @@ function setupEventListeners() {
                 cropDragState.imgY = offsetY;
             };
         });
-        
+
         // Hover effect
         opt.addEventListener('mouseenter', () => {
             opt.style.transform = 'scale(1.05)';
@@ -1416,7 +1418,7 @@ function setupEventListeners() {
             opt.style.transform = 'scale(1)';
         });
     });
-    
+
     // Crop modal drag logic (mouse)
     elements.cropContainer.addEventListener('mousedown', (e) => {
         cropDragState.dragging = true;
@@ -1425,7 +1427,7 @@ function setupEventListeners() {
         elements.cropContainer.style.cursor = 'grabbing';
         e.preventDefault();
     });
-    
+
     document.addEventListener('mousemove', (e) => {
         if (!cropDragState.dragging) return;
         const dx = e.clientX - cropDragState.startX;
@@ -1435,7 +1437,7 @@ function setupEventListeners() {
         elements.cropImage.style.left = newX + 'px';
         elements.cropImage.style.top = newY + 'px';
     });
-    
+
     document.addEventListener('mouseup', () => {
         if (!cropDragState.dragging) return;
         cropDragState.dragging = false;
@@ -1443,7 +1445,7 @@ function setupEventListeners() {
         cropDragState.imgY = parseFloat(elements.cropImage.style.top) || 0;
         elements.cropContainer.style.cursor = 'grab';
     });
-    
+
     // Crop modal drag logic (touch)
     elements.cropContainer.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
@@ -1452,7 +1454,7 @@ function setupEventListeners() {
         cropDragState.startY = touch.clientY;
         e.preventDefault();
     });
-    
+
     document.addEventListener('touchmove', (e) => {
         if (!cropDragState.dragging) return;
         const touch = e.touches[0];
@@ -1463,18 +1465,18 @@ function setupEventListeners() {
         elements.cropImage.style.left = newX + 'px';
         elements.cropImage.style.top = newY + 'px';
     });
-    
+
     document.addEventListener('touchend', () => {
         if (!cropDragState.dragging) return;
         cropDragState.dragging = false;
         cropDragState.imgX = parseFloat(elements.cropImage.style.left) || 0;
         cropDragState.imgY = parseFloat(elements.cropImage.style.top) || 0;
     });
-    
+
     // Crop save
     elements.btnCropSave.addEventListener('click', async () => {
         if (!pendingAvatar) return;
-        
+
         // Calculate object-position as percentage
         const container = elements.cropContainer;
         const img = elements.cropImage;
@@ -1484,7 +1486,7 @@ function setupEventListeners() {
         const imgH = img.clientHeight;
         const imgX = parseFloat(img.style.left) || 0;
         const imgY = parseFloat(img.style.top) || 0;
-        
+
         // Convert position to object-position percentage
         let posX = 50, posY = 50;
         if (imgW > cW) {
@@ -1495,7 +1497,7 @@ function setupEventListeners() {
             posY = (-imgY / (imgH - cH)) * 100;
             posY = Math.max(0, Math.min(100, posY));
         }
-        
+
         state.avatar = pendingAvatar;
         state.avatarPos = { x: Math.round(posX), y: Math.round(posY) };
         await saveState();
@@ -1504,7 +1506,7 @@ function setupEventListeners() {
         showToast(`Awatar ustawiony!`);
         pendingAvatar = null;
     });
-    
+
     // Crop cancel
     elements.btnCropCancel.addEventListener('click', () => {
         elements.avatarCropModal.classList.add('hidden');
@@ -1521,18 +1523,18 @@ function setupEventListeners() {
         }
         saveState();
     });
-    
+
     if (elements.pushToggle) {
         elements.pushToggle.addEventListener('change', async (e) => {
             const isEnabled = e.target.checked;
-            
+
             if (isEnabled) {
                 if (!("Notification" in window)) {
                     showToast("Twoja przeglądarka nie obsługuje powiadomień.");
                     e.target.checked = false;
                     return;
                 }
-                
+
                 if (Notification.permission === 'granted') {
                     state.pushEnabled = true;
                     await saveState();
@@ -1573,14 +1575,14 @@ function setupEventListeners() {
             showToast("Zresetowano postęp.");
         }
     });
-    
+
     // Logout
     elements.btnLogout.addEventListener('click', () => {
         currentUser = null;
         localStorage.removeItem('jwlingo_session');
         location.reload();
     });
-    
+
     // Friends
     if (elements.btnToggleSearch) {
         elements.btnToggleSearch.addEventListener('click', () => {
@@ -1591,21 +1593,21 @@ function setupEventListeners() {
     elements.searchFriendInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') searchFriends();
     });
-    
+
     // Personalize account
     if (elements.btnSaveDisplayName) {
         elements.btnSaveDisplayName.addEventListener('click', async () => {
             let newName = elements.settingsDisplayNameInput.value.trim();
             elements.btnSaveDisplayName.disabled = true;
             elements.btnSaveDisplayName.textContent = "...";
-            
+
             try {
                 state.displayName = newName;
                 await saveState();
                 updateUI();
                 elements.profileDisplayNameDisplay.textContent = newName || currentUser;
                 showToast("Zaktualizowano display name!");
-            } catch(e) {
+            } catch (e) {
                 console.error("Error saving display name:", e);
                 showToast("Błąd zapisu!");
             } finally {
@@ -1614,7 +1616,7 @@ function setupEventListeners() {
             }
         });
     }
-    
+
     if (elements.btnSaveBio) {
         elements.btnSaveBio.addEventListener('click', async () => {
             let newBio = elements.settingsBioInput.value.trim();
@@ -1625,15 +1627,15 @@ function setupEventListeners() {
                 await saveState();
                 elements.profileBioDisplay.textContent = newBio || "Tu jeszcze nic nie ma...";
                 showToast("Zaktualizowano biografię!");
-            } catch(e) { 
-                showToast("Błąd zapisu!"); 
+            } catch (e) {
+                showToast("Błąd zapisu!");
             } finally {
                 elements.btnSaveBio.disabled = false;
                 elements.btnSaveBio.textContent = "Zapisz biografię";
             }
         });
     }
-    
+
     // Profile
     if (elements.btnOpenProfile) {
         elements.btnOpenProfile.addEventListener('click', () => {
@@ -1649,14 +1651,14 @@ function setupEventListeners() {
                     }
                 }, 50);
             });
-            
+
             elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
             elements.profileUsernameDisplay.textContent = `@${currentUser}`;
             elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
             updateProfileAvatar();
         });
     }
-    
+
     // Messages
     elements.btnBackToMessages.addEventListener('click', () => {
         currentChatFriend = null;
@@ -1664,12 +1666,12 @@ function setupEventListeners() {
         elements.messagesFriendsList.classList.remove('hidden');
         renderMessagesFriendsList();
     });
-    
+
     elements.btnSendMessage.addEventListener('click', sendChatMessage);
     elements.chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendChatMessage();
     });
-    
+
     // Refresh messages when clicking the Messages tab
     const msgTabBtn = document.querySelector('.nav-item[data-target="view-messages"]');
     if (msgTabBtn) {
