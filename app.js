@@ -46,7 +46,7 @@ let cropDragState = { dragging: false, startX: 0, startY: 0, imgX: 0, imgY: 0 };
 
 async function setupNotifications() {
     if (!("Notification" in window)) return;
-    if (Notification.permission === "default") {
+    if (state.pushEnabled && Notification.permission === "default") {
         await Notification.requestPermission();
     }
 }
@@ -56,7 +56,7 @@ function scheduleReadReminder() {
     
     if (!isToday(state.lastReadDate)) {
         setTimeout(() => {
-            if (!isToday(state.lastReadDate) && Notification.permission === "granted") {
+            if (!isToday(state.lastReadDate) && state.pushEnabled && Notification.permission === "granted") {
                 new Notification("JWLingo", {
                     body: "Przeczytaj tekst ;)",
                     icon: "icon.png"
@@ -141,6 +141,7 @@ const elements = {
     btnSetAvatar: document.getElementById('btn-set-avatar'),
     btnLogout: document.getElementById('btn-logout'),
     themeToggle: document.getElementById('theme-toggle'),
+    pushToggle: document.getElementById('push-toggle'),
     btnReset: document.getElementById('btn-reset'),
     
     avatarModal: document.getElementById('avatar-modal'),
@@ -280,7 +281,8 @@ function handleLoginSuccess(userData) {
         displayName: userData.displayName || "",
         bio: userData.bio || "",
         avatar: userData.avatar || "",
-        avatarPos: userData.avatarPos || { x: 50, y: 50 }
+        avatarPos: userData.avatarPos || { x: 50, y: 50 },
+        pushEnabled: userData.pushEnabled || false
     };
     
     if (elements.settingsDisplayNameInput) {
@@ -296,6 +298,11 @@ function handleLoginSuccess(userData) {
     } else {
         document.body.removeAttribute('data-theme');
         elements.themeToggle.checked = false;
+    }
+    
+    if (elements.pushToggle) {
+        // Only show as checked if both state is true AND browser permits it (or hasn't denied it completely)
+        elements.pushToggle.checked = state.pushEnabled && Notification.permission !== 'denied';
     }
     
     elements.settingsUsernameDisplay.textContent = currentUser;
@@ -347,7 +354,8 @@ async function saveState() {
             displayName: state.displayName,
             bio: state.bio,
             avatar: state.avatar,
-            avatarPos: state.avatarPos
+            avatarPos: state.avatarPos,
+            pushEnabled: state.pushEnabled
         });
     } catch(e) {
         console.error("Save Error:", e);
@@ -1277,6 +1285,45 @@ function setupEventListeners() {
         }
         saveState();
     });
+    
+    if (elements.pushToggle) {
+        elements.pushToggle.addEventListener('change', async (e) => {
+            const isEnabled = e.target.checked;
+            
+            if (isEnabled) {
+                if (!("Notification" in window)) {
+                    showToast("Twoja przeglądarka nie obsługuje powiadomień.");
+                    e.target.checked = false;
+                    return;
+                }
+                
+                if (Notification.permission === 'granted') {
+                    state.pushEnabled = true;
+                    await saveState();
+                    showToast("Powiadomienia włączone!");
+                    setupNotifications(); // Re-run setup
+                } else if (Notification.permission !== 'denied') {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        state.pushEnabled = true;
+                        await saveState();
+                        showToast("Powiadomienia włączone!");
+                        setupNotifications();
+                    } else {
+                        e.target.checked = false;
+                        showToast("Odmówiono dostępu do powiadomień.");
+                    }
+                } else {
+                    e.target.checked = false;
+                    showToast("Powiadomienia są zablokowane w ustawieniach przeglądarki.");
+                }
+            } else {
+                state.pushEnabled = false;
+                await saveState();
+                showToast("Powiadomienia wyłączone!");
+            }
+        });
+    }
 
     elements.btnReset.addEventListener('click', () => {
         if (confirm("Czy na pewno chcesz zresetować całą swoją passę i osiągnięcia z bazy chmurowej?")) {
