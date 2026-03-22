@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, addDoc, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, addDoc, query, where, orderBy, limit, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDwba96XeU5xPwHJ8McK6DsP8O3cROWk",
@@ -114,6 +114,7 @@ const elements = {
     linkToLogin: document.getElementById('link-to-login'),
     
     streakCount: document.getElementById('streak-count'),
+    xpCount: document.getElementById('xp-count'),
     btnOpenProfile: document.getElementById('btn-open-profile'),
     greetingDisplayName: document.getElementById('greeting-displayname'),
     greetingUsername: document.getElementById('greeting-username'),
@@ -301,8 +302,14 @@ function handleLoginSuccess(userData) {
         bio: userData.bio || "",
         avatar: userData.avatar || "",
         avatarPos: userData.avatarPos || { x: 50, y: 50 },
-        pushEnabled: userData.pushEnabled || false
+        pushEnabled: userData.pushEnabled || false,
+        xp: userData.xp !== undefined ? userData.xp : (userData.streak || 0) * 20
     };
+    
+    // Retroactive migration for existing users
+    if (userData.xp === undefined) {
+        updateDoc(doc(db, "users", currentUser.toLowerCase()), { xp: state.xp }).catch(console.error);
+    }
     
     if (elements.settingsDisplayNameInput) {
         elements.settingsDisplayNameInput.value = state.displayName;
@@ -374,7 +381,8 @@ async function saveState() {
             bio: state.bio,
             avatar: state.avatar,
             avatarPos: state.avatarPos,
-            pushEnabled: state.pushEnabled
+            pushEnabled: state.pushEnabled,
+            xp: state.xp
         });
     } catch(e) {
         console.error("Save Error:", e);
@@ -383,6 +391,7 @@ async function saveState() {
 
 function updateUI() {
     elements.streakCount.textContent = state.streak;
+    if (elements.xpCount) elements.xpCount.textContent = state.xp || 0;
     
     if (state.displayName) {
         elements.greetingDisplayName.textContent = state.displayName;
@@ -498,6 +507,7 @@ async function completeReading() {
     }
     
     state.lastReadDate = new Date().toISOString();
+    state.xp = (state.xp || 0) + 20;
     await saveState();
     
     updateUI();
@@ -675,7 +685,10 @@ async function renderFriends() {
         card.innerHTML = `
             <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
             <div class="friend-grid-name">${dName}</div>
-            <div class="friend-grid-streak"><i class="fa-solid fa-fire"></i> ${f.streak || 0} dni</div>
+            <div class="friend-grid-streak" style="display: flex; gap: 8px; justify-content: flex-end;">
+                <span title="Passa (dni)"><i class="fa-solid fa-fire" style="color: var(--danger-color);"></i> ${f.streak || 0}</span>
+                <span title="Punkty Doświadczenia"><i class="fa-solid fa-star" style="color: #f1c40f;"></i> ${f.xp || 0} XP</span>
+            </div>
             <div class="friend-grid-actions">
                 <button class="btn btn-secondary btn-small btn-motivate" data-name="${f.username}" style="background-color: var(--secondary-color);">MOTYWUJ</button>
                 <button class="btn btn-secondary btn-small btn-chat" data-name="${f.username}" style="background-color: var(--secondary-color);">czatuj</button>
@@ -835,7 +848,7 @@ async function renderRanking() {
     elements.rankingList.innerHTML = '<p style="text-align:center; color:var(--text-light);">Odświeżanie rankingu...</p>';
     
     try {
-        const q = query(collection(db, "users"), orderBy("streak", "desc"), limit(100));
+        const q = query(collection(db, "users"), orderBy("xp", "desc"), limit(100));
         const querySnapshot = await getDocs(q);
         
         elements.rankingList.innerHTML = '';
@@ -858,7 +871,10 @@ async function renderRanking() {
                 <div style="font-size: 1.2rem; font-weight: 900; color: var(--text-light); width: 30px; text-align: center;">${rankDisplay}</div>
                 <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
                 <div class="friend-grid-name">${dName}</div>
-                <div class="friend-grid-streak"><i class="fa-solid fa-fire"></i> ${f.streak || 0} dni</div>
+                <div class="friend-grid-streak" style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <span title="Passa (dni)"><i class="fa-solid fa-fire" style="color: var(--danger-color);"></i> ${f.streak || 0}</span>
+                    <span title="Punkty Doświadczenia"><i class="fa-solid fa-star" style="color: #f1c40f;"></i> ${f.xp || 0} XP</span>
+                </div>
             `;
             
             elements.rankingList.appendChild(card);
@@ -1232,7 +1248,8 @@ function setupEventListeners() {
                         bio: "",
                         avatar: "",
                         avatarPos: { x: 50, y: 50 },
-                        pushEnabled: false
+                        pushEnabled: false,
+                        xp: 0
                     };
                     await setDoc(userDocRef, newUser);
                     localStorage.setItem('jwlingo_session', userStr);

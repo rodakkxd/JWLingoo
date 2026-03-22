@@ -46,9 +46,15 @@
         <div id="main-app-container" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
             <!-- Header -->
             <header class="top-nav">
-                <div class="streak-container">
-                    <i class="fa-solid fa-fire streak-icon"></i>
-                    <span id="streak-count">0</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="streak-container">
+                        <i class="fa-solid fa-fire streak-icon"></i>
+                        <span id="streak-count">0</span>
+                    </div>
+                    <div class="xp-container" style="background-color: var(--surface-color); border-radius: 20px; padding: 5px 12px; display: flex; align-items: center; gap: 5px; font-weight: 800; color: var(--text-color); box-shadow: 0 4px 10px var(--shadow-color);">
+                        <i class="fa-solid fa-star" style="color: #f1c40f; font-size: 1.2rem;"></i>
+                        <span id="xp-count">0</span>
+                    </div>
                 </div>
                 <div class="user-greeting" id="btn-open-profile" style="cursor: pointer; text-align: right; transition: opacity 0.2s;">
                     <span id="greeting-displayname" style="font-weight: 800; font-size: 1.1rem; display: block; color: var(--primary-color);"></span>
