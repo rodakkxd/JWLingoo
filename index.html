@@ -252,6 +252,32 @@
             </div>
         </div>
 
+        <!-- Avatar Crop/Position Modal -->
+        <div id="avatar-crop-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 360px;">
+                <h2 style="font-weight: 900; margin-bottom: 5px; color: var(--text-color);">Wyśrodkuj zdjęcie</h2>
+                <p style="color: var(--text-light); margin-bottom: 20px; font-weight: 600;">Przeciągnij zdjęcie, aby ustawić kadr</p>
+                
+                <div id="crop-container" style="width: 250px; height: 250px; border-radius: 50%; overflow: hidden; margin: 0 auto 20px; position: relative; border: 4px solid var(--primary-color); touch-action: none; cursor: grab;">
+                    <img id="crop-image" src="" alt="crop" style="position: absolute; min-width: 100%; min-height: 100%; object-fit: cover; user-select: none; pointer-events: none;">
+                    <!-- Grid overlay -->
+                    <div id="crop-grid" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2;">
+                        <div style="position: absolute; left: 33.3%; top: 0; width: 1px; height: 100%; background: rgba(255,255,255,0.35);"></div>
+                        <div style="position: absolute; left: 66.6%; top: 0; width: 1px; height: 100%; background: rgba(255,255,255,0.35);"></div>
+                        <div style="position: absolute; top: 33.3%; left: 0; height: 1px; width: 100%; background: rgba(255,255,255,0.35);"></div>
+                        <div style="position: absolute; top: 66.6%; left: 0; height: 1px; width: 100%; background: rgba(255,255,255,0.35);"></div>
+                        <!-- Center crosshair -->
+                        <div style="position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;"></div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-crop-cancel" class="btn btn-secondary btn-chunky" style="flex: 1;">Anuluj</button>
+                    <button id="btn-crop-save" class="btn btn-primary btn-chunky" style="flex: 1;">Zapisz</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal for Milestones / Achievements -->
         <div id="achievement-modal" class="modal hidden">
             <div class="modal-content">

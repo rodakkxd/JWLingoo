@@ -41,6 +41,8 @@ let messagesUnsubscribe = null;
 let initialMessagesLoaded = false;
 let userDocUnsubscribe = null;
 let friendAvatarCache = {};
+let pendingAvatar = null;
+let cropDragState = { dragging: false, startX: 0, startY: 0, imgX: 0, imgY: 0 };
 
 async function setupNotifications() {
     if (!("Notification" in window)) return;
@@ -143,6 +145,12 @@ const elements = {
     
     avatarModal: document.getElementById('avatar-modal'),
     btnCloseAvatarModal: document.getElementById('btn-close-avatar-modal'),
+    
+    avatarCropModal: document.getElementById('avatar-crop-modal'),
+    cropContainer: document.getElementById('crop-container'),
+    cropImage: document.getElementById('crop-image'),
+    btnCropSave: document.getElementById('btn-crop-save'),
+    btnCropCancel: document.getElementById('btn-crop-cancel'),
     
     modal: document.getElementById('achievement-modal'),
     modalTitle: document.getElementById('modal-title'),
@@ -270,7 +278,8 @@ function handleLoginSuccess(userData) {
         friends: userData.friends || [],
         displayName: userData.displayName || "",
         bio: userData.bio || "",
-        avatar: userData.avatar || ""
+        avatar: userData.avatar || "",
+        avatarPos: userData.avatarPos || { x: 50, y: 50 }
     };
     
     if (elements.settingsDisplayNameInput) {
@@ -336,7 +345,8 @@ async function saveState() {
             friends: state.friends,
             displayName: state.displayName,
             bio: state.bio,
-            avatar: state.avatar
+            avatar: state.avatar,
+            avatarPos: state.avatarPos
         });
     } catch(e) {
         console.error("Save Error:", e);
@@ -359,7 +369,7 @@ function updateUI() {
     updateProfileAvatar();
 }
 
-function getAvatarHTML(avatarName, size = 40) {
+function getAvatarHTML(avatarName, size = 40, avatarPos = null) {
     const AVATAR_MAP = {
         'lina': 'lina.PNG',
         'kuba': 'kuba.PNG',
@@ -367,7 +377,8 @@ function getAvatarHTML(avatarName, size = 40) {
         'gabrys': 'gabrys.PNG'
     };
     if (avatarName && AVATAR_MAP[avatarName]) {
-        return `<img src="${AVATAR_MAP[avatarName]}" alt="${avatarName}" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;">`;
+        const pos = avatarPos || { x: 50, y: 50 };
+        return `<img src="${AVATAR_MAP[avatarName]}" alt="${avatarName}" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover; object-position: ${pos.x}% ${pos.y}%;">`;
     }
     return `<i class="fa-solid fa-user" style="font-size: ${size * 0.5}px;"></i>`;
 }
@@ -381,7 +392,8 @@ function updateProfileAvatar() {
         'gabrys': 'gabrys.PNG'
     };
     if (state.avatar && AVATAR_MAP[state.avatar]) {
-        elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[state.avatar]}" alt="${state.avatar}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        const pos = state.avatarPos || { x: 50, y: 50 };
+        elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[state.avatar]}" alt="${state.avatar}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${pos.x}% ${pos.y}%;">`;
         elements.profileAvatarContainer.style.overflow = 'hidden';
     } else {
         elements.profileAvatarContainer.innerHTML = '<i class="fa-solid fa-user"></i>';
@@ -623,7 +635,7 @@ async function renderFriends() {
     
     // Cache friend avatars for messages list
     fetchedFriends.forEach(f => {
-        friendAvatarCache[f.username] = f.avatar || '';
+        friendAvatarCache[f.username] = { avatar: f.avatar || '', avatarPos: f.avatarPos || { x: 50, y: 50 } };
     });
     
     fetchedFriends.forEach(f => {
@@ -633,7 +645,7 @@ async function renderFriends() {
         let dName = f.displayName || f.username;
         
         card.innerHTML = `
-            <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50)}</div>
+            <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
             <div class="friend-grid-name">${dName}</div>
             <div class="friend-grid-streak"><i class="fa-solid fa-fire"></i> ${f.streak || 0} dni</div>
             <div class="friend-grid-actions">
@@ -718,10 +730,11 @@ async function renderFriends() {
                 elements.profileUsernameDisplay.textContent = `@${name}`;
                 elements.profileBioDisplay.textContent = "";
                 // Show friend's avatar from cache
-                const friendAvatar = friendAvatarCache[name] || '';
+                const friendAvatar = friendAvatarCache[name]?.avatar || '';
+                const friendPos = friendAvatarCache[name]?.avatarPos || { x: 50, y: 50 };
                 if (friendAvatar) {
                     const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
-                    elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[friendAvatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[friendAvatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${friendPos.x}% ${friendPos.y}%;">`;
                     elements.profileAvatarContainer.style.overflow = 'hidden';
                 } else {
                     elements.profileAvatarContainer.innerHTML = '<i class="fa-solid fa-user"></i>';
@@ -736,7 +749,8 @@ async function renderFriends() {
                         // Update avatar from fresh data
                         if (uData.avatar) {
                             const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
-                            elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[uData.avatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                            const uPos = uData.avatarPos || { x: 50, y: 50 };
+                            elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[uData.avatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: ${uPos.x}% ${uPos.y}%;">`;
                             elements.profileAvatarContainer.style.overflow = 'hidden';
                         }
                     }
@@ -814,7 +828,7 @@ function renderMessagesFriendsList() {
         
         card.innerHTML = `
             <div class="friend-info">
-                <div class="friend-avatar" style="${friendAvatarCache[friendUsername] ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(friendAvatarCache[friendUsername], 40)}</div>
+                <div class="friend-avatar" style="${friendAvatarCache[friendUsername]?.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(friendAvatarCache[friendUsername]?.avatar, 40, friendAvatarCache[friendUsername]?.avatarPos)}</div>
                 <div class="friend-details">
                     <span class="friend-name">${friendUsername}</span>
                     <span class="message-preview">${lastMsg}</span>
@@ -1099,15 +1113,54 @@ function setupEventListeners() {
         });
     }
     
-    // Avatar option click handlers
+    // Avatar option click handlers — open crop modal instead of saving directly
     document.querySelectorAll('.avatar-option').forEach(opt => {
-        opt.addEventListener('click', async () => {
+        opt.addEventListener('click', () => {
             const avatarName = opt.getAttribute('data-avatar');
-            state.avatar = avatarName;
-            await saveState();
-            updateProfileAvatar();
+            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+            pendingAvatar = avatarName;
+            
+            // Load image in crop modal
+            elements.cropImage.src = AVATAR_MAP[avatarName];
+            // Reset position to center
+            elements.cropImage.style.left = '0px';
+            elements.cropImage.style.top = '0px';
+            cropDragState = { dragging: false, startX: 0, startY: 0, imgX: 0, imgY: 0 };
+            
             elements.avatarModal.classList.add('hidden');
-            showToast(`Zmieniono awatar na: ${avatarName}!`);
+            elements.avatarCropModal.classList.remove('hidden');
+            
+            // Wait for image to load to center it
+            elements.cropImage.onload = () => {
+                const container = elements.cropContainer;
+                const img = elements.cropImage;
+                const cW = container.clientWidth;
+                const cH = container.clientHeight;
+                
+                // Scale image to cover the container
+                const imgRatio = img.naturalWidth / img.naturalHeight;
+                const cRatio = cW / cH;
+                let renderW, renderH;
+                if (imgRatio > cRatio) {
+                    renderH = cH;
+                    renderW = cH * imgRatio;
+                } else {
+                    renderW = cW;
+                    renderH = cW / imgRatio;
+                }
+                img.style.width = renderW + 'px';
+                img.style.height = renderH + 'px';
+                img.style.minWidth = 'unset';
+                img.style.minHeight = 'unset';
+                
+                // Center
+                const offsetX = -(renderW - cW) / 2;
+                const offsetY = -(renderH - cH) / 2;
+                img.style.left = offsetX + 'px';
+                img.style.top = offsetY + 'px';
+                cropDragState.imgX = offsetX;
+                cropDragState.imgY = offsetY;
+            };
         });
         
         // Hover effect
@@ -1117,6 +1170,100 @@ function setupEventListeners() {
         opt.addEventListener('mouseleave', () => {
             opt.style.transform = 'scale(1)';
         });
+    });
+    
+    // Crop modal drag logic (mouse)
+    elements.cropContainer.addEventListener('mousedown', (e) => {
+        cropDragState.dragging = true;
+        cropDragState.startX = e.clientX;
+        cropDragState.startY = e.clientY;
+        elements.cropContainer.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!cropDragState.dragging) return;
+        const dx = e.clientX - cropDragState.startX;
+        const dy = e.clientY - cropDragState.startY;
+        const newX = cropDragState.imgX + dx;
+        const newY = cropDragState.imgY + dy;
+        elements.cropImage.style.left = newX + 'px';
+        elements.cropImage.style.top = newY + 'px';
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (!cropDragState.dragging) return;
+        cropDragState.dragging = false;
+        cropDragState.imgX = parseFloat(elements.cropImage.style.left) || 0;
+        cropDragState.imgY = parseFloat(elements.cropImage.style.top) || 0;
+        elements.cropContainer.style.cursor = 'grab';
+    });
+    
+    // Crop modal drag logic (touch)
+    elements.cropContainer.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        cropDragState.dragging = true;
+        cropDragState.startX = touch.clientX;
+        cropDragState.startY = touch.clientY;
+        e.preventDefault();
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        if (!cropDragState.dragging) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - cropDragState.startX;
+        const dy = touch.clientY - cropDragState.startY;
+        const newX = cropDragState.imgX + dx;
+        const newY = cropDragState.imgY + dy;
+        elements.cropImage.style.left = newX + 'px';
+        elements.cropImage.style.top = newY + 'px';
+    });
+    
+    document.addEventListener('touchend', () => {
+        if (!cropDragState.dragging) return;
+        cropDragState.dragging = false;
+        cropDragState.imgX = parseFloat(elements.cropImage.style.left) || 0;
+        cropDragState.imgY = parseFloat(elements.cropImage.style.top) || 0;
+    });
+    
+    // Crop save
+    elements.btnCropSave.addEventListener('click', async () => {
+        if (!pendingAvatar) return;
+        
+        // Calculate object-position as percentage
+        const container = elements.cropContainer;
+        const img = elements.cropImage;
+        const cW = container.clientWidth;
+        const cH = container.clientHeight;
+        const imgW = img.clientWidth;
+        const imgH = img.clientHeight;
+        const imgX = parseFloat(img.style.left) || 0;
+        const imgY = parseFloat(img.style.top) || 0;
+        
+        // Convert position to object-position percentage
+        let posX = 50, posY = 50;
+        if (imgW > cW) {
+            posX = (-imgX / (imgW - cW)) * 100;
+            posX = Math.max(0, Math.min(100, posX));
+        }
+        if (imgH > cH) {
+            posY = (-imgY / (imgH - cH)) * 100;
+            posY = Math.max(0, Math.min(100, posY));
+        }
+        
+        state.avatar = pendingAvatar;
+        state.avatarPos = { x: Math.round(posX), y: Math.round(posY) };
+        await saveState();
+        updateProfileAvatar();
+        elements.avatarCropModal.classList.add('hidden');
+        showToast(`Awatar ustawiony!`);
+        pendingAvatar = null;
+    });
+    
+    // Crop cancel
+    elements.btnCropCancel.addEventListener('click', () => {
+        elements.avatarCropModal.classList.add('hidden');
+        pendingAvatar = null;
     });
 
     elements.themeToggle.addEventListener('change', (e) => {
