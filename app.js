@@ -662,7 +662,10 @@ async function renderFriends() {
         try {
             let docSnap = await getDoc(doc(db, "users", friendUsername.toLowerCase()));
             if (docSnap.exists()) {
-                fetchedFriends.push(docSnap.data());
+                const f = docSnap.data();
+                if (f.status !== 'deleted' && f.status !== 'deactivated' && f.status !== 'banned') {
+                    fetchedFriends.push(f);
+                }
             }
         } catch(e) {
             console.error(e);
@@ -809,6 +812,7 @@ async function renderRanking() {
         
         querySnapshot.forEach((docSnap) => {
             const f = docSnap.data();
+            if (f.status === 'deleted' || f.status === 'deactivated' || f.status === 'banned') return;
             const card = document.createElement('div');
             card.classList.add('friend-grid-card');
             
