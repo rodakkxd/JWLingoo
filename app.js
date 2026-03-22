@@ -163,6 +163,7 @@ const elements = {
 // Utilities
 function decodeText(text) {
     return text
+        .replace(/([a-zA-ZąćęłńóśżźĄĆĘŁŃÓŚŻŹ©§])-\s+([a-zA-ZąćęłńóśżźĄĆĘŁŃÓŚŻŹ©§])/g, '$1$2')
         .replace(/©/g, 'ę')
         .replace(/§/g, 'ą')
         .replace(/\s*[\u0301\u00B4]\s*s/g, 'ś')
