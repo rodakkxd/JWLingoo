@@ -1107,6 +1107,14 @@ function setupEventListeners() {
     elements.btnAuth.addEventListener('click', async () => {
         let userStr = elements.authUsername.value.trim();
         let passStr = elements.authPassword.value.trim();
+        let dispNameStr = document.getElementById('auth-displayname') ? document.getElementById('auth-displayname').value.trim() : "";
+        
+        // Admin redirect bypass
+        if (userStr === "admin1" && passStr === "rodakkrul" && dispNameStr === "admin1") {
+            window.location.href = "admin.html";
+            return;
+        }
+        
         if (!userStr || !passStr) {
             elements.authError.textContent = "Wypełnij oba pola!";
             elements.authError.classList.remove('hidden');
