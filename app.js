@@ -141,6 +141,7 @@ const elements = {
     profileUsernameDisplay: document.getElementById('profile-username-display'),
     profileBioDisplay: document.getElementById('profile-bio-display'),
     profileAvatarContainer: document.getElementById('profile-avatar-container'),
+    profileEditControls: document.getElementById('profile-edit-controls'),
     
     settingsUsernameDisplay: document.getElementById('settings-username-display'),
     settingsDisplayNameInput: document.getElementById('settings-display-name-input'),
@@ -885,11 +886,19 @@ async function handleProfileViewClick(e) {
     }, 50);
     
     if (name === currentUser) {
+        if (elements.profileEditControls) elements.profileEditControls.style.display = 'block';
+        if (elements.btnSetAvatar) elements.btnSetAvatar.style.display = 'inline-block';
+        if (elements.profileAvatarContainer) elements.profileAvatarContainer.style.cursor = 'pointer';
+        
         elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
         elements.profileUsernameDisplay.textContent = `@${currentUser}`;
         elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
         updateProfileAvatar();
     } else {
+        if (elements.profileEditControls) elements.profileEditControls.style.display = 'none';
+        if (elements.btnSetAvatar) elements.btnSetAvatar.style.display = 'none';
+        if (elements.profileAvatarContainer) elements.profileAvatarContainer.style.cursor = 'default';
+        
         elements.profileDisplayNameDisplay.textContent = "Ładowanie...";
         elements.profileUsernameDisplay.textContent = `@${name}`;
         elements.profileBioDisplay.textContent = "";
@@ -1211,6 +1220,10 @@ function setupEventListeners() {
             
             // Populate profile data when Profile tab is opened
             if (targetView === 'view-profile' && currentUser) {
+                if (elements.profileEditControls) elements.profileEditControls.style.display = 'block';
+                if (elements.btnSetAvatar) elements.btnSetAvatar.style.display = 'inline-block';
+                if (elements.profileAvatarContainer) elements.profileAvatarContainer.style.cursor = 'pointer';
+                
                 elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
                 elements.profileUsernameDisplay.textContent = `@${currentUser}`;
                 elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";

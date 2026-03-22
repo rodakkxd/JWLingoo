@@ -183,26 +183,27 @@
                     <p id="profile-bio-display" style="font-weight: 600; line-height: 1.6; color: var(--text-color); font-size: 1.1rem; word-break: break-word;"></p>
                 </div>
 
-                <!-- Edit Display Name -->
-                <div class="settings-card" style="margin-bottom: 20px;">
-                    <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                        <label style="font-weight: 800;"><i class="fa-solid fa-pen" style="margin-right: 8px; color: var(--primary-color);"></i>Display Name</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="settings-display-name-input" class="input-field" placeholder="Display Name..." style="flex: 1;">
-                            <button id="btn-save-display-name" class="btn btn-primary btn-small">Zapisz</button>
+                <div id="profile-edit-controls">
+                    <!-- Edit Display Name -->
+                    <div class="settings-card" style="margin-bottom: 20px;">
+                        <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                            <label style="font-weight: 800;"><i class="fa-solid fa-pen" style="margin-right: 8px; color: var(--primary-color);"></i>Display Name</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="settings-display-name-input" class="input-field" placeholder="Display Name..." style="flex: 1;">
+                                <button id="btn-save-display-name" class="btn btn-primary btn-small">Zapisz</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Bio -->
+                    <div class="settings-card" style="margin-bottom: 20px;">
+                        <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                            <label style="font-weight: 800;"><i class="fa-solid fa-quote-left" style="margin-right: 8px; color: var(--primary-color);"></i>Biografia</label>
+                            <textarea id="settings-bio-input" class="input-field" placeholder="Twoja biografia..." style="width: 100%; resize: vertical; min-height: 80px;"></textarea>
+                            <button id="btn-save-bio" class="btn btn-primary btn-small">Zapisz biografię</button>
                         </div>
                     </div>
                 </div>
-
-                <!-- Edit Bio -->
-                <div class="settings-card" style="margin-bottom: 20px;">
-                    <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                        <label style="font-weight: 800;"><i class="fa-solid fa-quote-left" style="margin-right: 8px; color: var(--primary-color);"></i>Biografia</label>
-                        <textarea id="settings-bio-input" class="input-field" placeholder="Twoja biografia..." style="width: 100%; resize: vertical; min-height: 80px;"></textarea>
-                        <button id="btn-save-bio" class="btn btn-primary btn-small">Zapisz biografię</button>
-                    </div>
-                </div>
-
             </section>
 
             <!-- View: Settings (Ustawienia) -->
