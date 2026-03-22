@@ -24,6 +24,7 @@ const elements = {
     adminUsersList: document.getElementById('admin-users-list'),
     adminStreaksList: document.getElementById('admin-streaks-list'),
     btnAdminLogout: document.getElementById('btn-admin-logout'),
+    btnAdminFixXp: document.getElementById('btn-admin-fix-xp'),
     adminModal: document.getElementById('admin-modal'),
     modalUsername: document.getElementById('modal-username'),
     btnActionBan: document.getElementById('btn-action-ban'),
@@ -61,6 +62,32 @@ elements.btnAdminLogout.addEventListener('click', () => {
     elements.adminPass.value = '';
     elements.navItems[0].click(); // reset to first tab
 });
+
+if (elements.btnAdminFixXp) {
+    elements.btnAdminFixXp.addEventListener('click', async () => {
+        elements.btnAdminFixXp.textContent = "Naprawianie XP...";
+        elements.btnAdminFixXp.disabled = true;
+        try {
+            const snapshot = await getDocs(collection(db, "users"));
+            let count = 0;
+            for (const docSnap of snapshot.docs) {
+                const data = docSnap.data();
+                if (data.xp === undefined) {
+                    const calculatedXp = (data.streak || 0) * 20;
+                    await updateDoc(doc(db, "users", docSnap.id), { xp: calculatedXp });
+                    count++;
+                }
+            }
+            showToast(`Gotowe! Naprawiono XP u ${count} uzytkowników.`);
+            loadUsers();
+        } catch (e) {
+            showToast(`Błąd: ${e.message}`);
+        } finally {
+            elements.btnAdminFixXp.innerHTML = '<i class="fa-solid fa-star"></i> Napraw XP wszystkim';
+            elements.btnAdminFixXp.disabled = false;
+        }
+    });
+}
 
 elements.navItems.forEach(item => {
     item.addEventListener('click', () => {
