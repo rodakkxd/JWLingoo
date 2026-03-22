@@ -848,7 +848,7 @@ async function renderRanking() {
     elements.rankingList.innerHTML = '<p style="text-align:center; color:var(--text-light);">Odświeżanie rankingu...</p>';
     
     try {
-        const q = query(collection(db, "users"), orderBy("xp", "desc"), limit(100));
+        const q = query(collection(db, "users"), where("xp", ">", 0), orderBy("xp", "desc"), limit(100));
         const querySnapshot = await getDocs(q);
         
         elements.rankingList.innerHTML = '';
