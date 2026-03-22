@@ -117,6 +117,7 @@ const elements = {
     viewRanking: document.getElementById('view-ranking'),
     btnOpenRanking: document.getElementById('btn-open-ranking'),
     btnOpenFriends: document.getElementById('btn-open-friends'),
+    btnInviteFriend: document.getElementById('btn-invite-friend'),
     btnBackFromRanking: document.getElementById('btn-back-from-ranking'),
     btnBackFromFriends: document.getElementById('btn-back-from-friends'),
     rankingList: document.getElementById('ranking-list'),
@@ -1166,6 +1167,28 @@ function setupEventListeners() {
             elements.btnAuth.textContent = "Wejdź";
         }
     });
+
+    if (elements.btnInviteFriend) {
+        elements.btnInviteFriend.addEventListener('click', async () => {
+            const shareData = {
+                title: 'JWLingo',
+                text: 'Czytaj razem ze mna tekst dzienny :)',
+                url: 'https://jwlingo.vercel.app'
+            };
+            
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback to clipboard
+                    await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+                    showToast("Skopiowano link do schowka!");
+                }
+            } catch (err) {
+                console.error("Error sharing:", err);
+            }
+        });
+    }
 
     // Navigation
     elements.navItems.forEach(item => {

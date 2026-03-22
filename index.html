@@ -89,7 +89,12 @@
 
             <!-- View: Community (Społeczność Hub) -->
             <section id="view-community" class="view hidden" style="height: 100%; display: flex; flex-direction: column;">
-                <h2 class="view-title">Społeczność</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="view-title" style="margin-bottom: 0;">Społeczność</h2>
+                    <button id="btn-invite-friend" class="btn btn-secondary btn-small" style="background-color: var(--secondary-color); color: white; display: flex; gap: 8px; align-items: center; padding: 5px 16px; border-radius: 8px;">
+                        <i class="fa-solid fa-user-plus"></i> <span style="font-weight: 700;">Zaproś</span>
+                    </button>
+                </div>
                 <div style="display: flex; flex-direction: column; gap: 20px; flex: 1;">
                     <div class="settings-card" id="btn-open-ranking" style="text-align: center; cursor: pointer; padding: 40px 20px; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.2s;">
                         <i class="fa-solid fa-trophy" style="font-size: 3.5rem; color: #f1c40f; margin-bottom: 15px;"></i>
