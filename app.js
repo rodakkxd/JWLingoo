@@ -98,11 +98,20 @@ const FUNNY_MESSAGES = [
 const elements = {
     viewAuth: document.getElementById('view-auth'),
     mainAppContainer: document.getElementById('main-app-container'),
-    authUsername: document.getElementById('auth-username'),
-    authDisplayName: document.getElementById('auth-displayname'),
-    authPassword: document.getElementById('auth-password'),
-    btnAuth: document.getElementById('btn-auth'),
-    authError: document.getElementById('auth-error'),
+    authLoginForm: document.getElementById('auth-login-form'),
+    loginUsername: document.getElementById('login-username'),
+    loginPassword: document.getElementById('login-password'),
+    btnLogin: document.getElementById('btn-login'),
+    loginError: document.getElementById('login-error'),
+    linkToRegister: document.getElementById('link-to-register'),
+    
+    authRegisterForm: document.getElementById('auth-register-form'),
+    registerUsername: document.getElementById('register-username'),
+    registerDisplayname: document.getElementById('register-displayname'),
+    registerPassword: document.getElementById('register-password'),
+    btnRegister: document.getElementById('btn-register'),
+    registerError: document.getElementById('register-error'),
+    linkToLogin: document.getElementById('link-to-login'),
     
     streakCount: document.getElementById('streak-count'),
     btnOpenProfile: document.getElementById('btn-open-profile'),
@@ -1103,87 +1112,143 @@ async function searchFriends() {
 }
 
 function setupEventListeners() {
-    // Auth
-    elements.btnAuth.addEventListener('click', async () => {
-        let userStr = elements.authUsername.value.trim();
-        let passStr = elements.authPassword.value.trim();
-        let dispNameStr = document.getElementById('auth-displayname') ? document.getElementById('auth-displayname').value.trim() : "";
+    // Auth UI Toggles
+    if (elements.linkToRegister && elements.linkToLogin) {
+        elements.linkToRegister.addEventListener('click', () => {
+            elements.authLoginForm.classList.add('hidden');
+            elements.authRegisterForm.classList.remove('hidden');
+            elements.loginError.classList.add('hidden');
+        });
         
-        // Admin redirect bypass
-        if (userStr === "admin1" && passStr === "rodakkrul" && dispNameStr === "admin1") {
-            window.location.href = "admin.html";
-            return;
-        }
-        
-        if (!userStr || !passStr) {
-            elements.authError.textContent = "Wypełnij oba pola!";
-            elements.authError.classList.remove('hidden');
-            return;
-        }
-        
-        elements.btnAuth.disabled = true;
-        elements.btnAuth.textContent = "Łączenie z chmurą...";
-        
-        try {
-            let userDocRef = doc(db, "users", userStr.toLowerCase());
-            let docSnap = await getDoc(userDocRef);
-            
-            if (docSnap.exists()) {
-                let userData = docSnap.data();
-                
-                if (userData.status === 'banned') {
-                    elements.authError.textContent = "Konto zablokowane do odwołania";
-                    elements.authError.classList.remove('hidden');
-                    return;
-                }
-                if (userData.status === 'deactivated') {
-                    elements.authError.textContent = "Konto dezaktywowane";
-                    elements.authError.classList.remove('hidden');
-                    return;
-                }
-                if (userData.status === 'deleted') {
-                    elements.authError.textContent = "Username not available";
-                    elements.authError.classList.remove('hidden');
-                    return;
-                }
+        elements.linkToLogin.addEventListener('click', () => {
+            elements.authRegisterForm.classList.add('hidden');
+            elements.authLoginForm.classList.remove('hidden');
+            elements.registerError.classList.add('hidden');
+        });
+    }
 
-                const hashedPass = await hashPassword(passStr);
-                if (userData.password === hashedPass) {
-                    elements.authError.classList.add('hidden');
-                    localStorage.setItem('jwlingo_session', userStr);
-                    handleLoginSuccess(userData);
-                } else {
-                    elements.authError.textContent = "Błędne hasło!";
-                    elements.authError.classList.remove('hidden');
-                }
-            } else {
-                const hashedNewPass = await hashPassword(passStr);
-                let newUser = {
-                    username: userStr,
-                    password: hashedNewPass,
-                    displayName: elements.authDisplayName.value.trim(),
-                    streak: 0,
-                    lastReadDate: null,
-                    theme: "light",
-                    achievements: [],
-                    friends: [],
-                    bio: ""
-                };
-                await setDoc(userDocRef, newUser);
-                localStorage.setItem('jwlingo_session', userStr);
-                handleLoginSuccess(newUser);
+    // Login Logic
+    if (elements.btnLogin) {
+        elements.btnLogin.addEventListener('click', async () => {
+            let userStr = elements.loginUsername.value.trim();
+            let passStr = elements.loginPassword.value.trim();
+            
+            // Admin redirect bypass
+            if (userStr === "admin1" && passStr === "rodakkrul") {
+                window.location.href = "admin.html";
+                return;
             }
-        } catch (e) {
-            console.error(e);
-            let msg = e.message || "Błąd sieci lub bazy.";
-            if (msg.includes("permissions")) msg = "Odmowa dostępu w Firebase (Test Mode niezaznaczony).";
-            elements.authError.textContent = "Błąd: " + msg;
-            elements.authError.classList.remove('hidden');
-        } finally {
-            elements.btnAuth.disabled = false;
-            elements.btnAuth.textContent = "Wejdź";
-        }
-    });
+            
+            if (!userStr || !passStr) {
+                elements.loginError.textContent = "Wypełnij oba pola!";
+                elements.loginError.classList.remove('hidden');
+                return;
+            }
+            
+            elements.btnLogin.disabled = true;
+            elements.btnLogin.textContent = "Logowanie...";
+            
+            try {
+                let userDocRef = doc(db, "users", userStr.toLowerCase());
+                let docSnap = await getDoc(userDocRef);
+                
+                if (docSnap.exists()) {
+                    let userData = docSnap.data();
+                    
+                    if (userData.status === 'banned') {
+                        elements.loginError.textContent = "Konto zablokowane do odwołania";
+                        elements.loginError.classList.remove('hidden');
+                        return;
+                    }
+                    if (userData.status === 'deactivated') {
+                        elements.loginError.textContent = "Konto dezaktywowane";
+                        elements.loginError.classList.remove('hidden');
+                        return;
+                    }
+                    if (userData.status === 'deleted') {
+                        elements.loginError.textContent = "Username not available";
+                        elements.loginError.classList.remove('hidden');
+                        return;
+                    }
+
+                    const hashedPass = await hashPassword(passStr);
+                    if (userData.password === hashedPass) {
+                        elements.loginError.classList.add('hidden');
+                        localStorage.setItem('jwlingo_session', userStr);
+                        handleLoginSuccess(userData);
+                    } else {
+                        elements.loginError.textContent = "Błędne hasło!";
+                        elements.loginError.classList.remove('hidden');
+                    }
+                } else {
+                    elements.loginError.textContent = "Konto nie istnieje. Zarejestruj się.";
+                    elements.loginError.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+                elements.loginError.textContent = "Błąd bazy danych.";
+                elements.loginError.classList.remove('hidden');
+            } finally {
+                elements.btnLogin.disabled = false;
+                elements.btnLogin.textContent = "Wejdź";
+            }
+        });
+    }
+
+    // Register Logic
+    if (elements.btnRegister) {
+        elements.btnRegister.addEventListener('click', async () => {
+            let userStr = elements.registerUsername.value.trim();
+            let passStr = elements.registerPassword.value.trim();
+            let dispStr = elements.registerDisplayname.value.trim();
+            
+            if (!userStr || !passStr) {
+                elements.registerError.textContent = "Nazwa i hasło są wymagane!";
+                elements.registerError.classList.remove('hidden');
+                return;
+            }
+            
+            elements.btnRegister.disabled = true;
+            elements.btnRegister.textContent = "Tworzenie konta...";
+            
+            try {
+                let userDocRef = doc(db, "users", userStr.toLowerCase());
+                let docSnap = await getDoc(userDocRef);
+                
+                if (docSnap.exists()) {
+                    elements.registerError.textContent = "Użytkownik o tej nazwie już istnieje!";
+                    elements.registerError.classList.remove('hidden');
+                } else {
+                    const hashedNewPass = await hashPassword(passStr);
+                    let newUser = {
+                        username: userStr,
+                        password: hashedNewPass,
+                        displayName: dispStr || userStr,
+                        streak: 0,
+                        lastReadDate: null,
+                        theme: "light",
+                        achievements: [],
+                        friends: [],
+                        bio: "",
+                        avatar: "",
+                        avatarPos: { x: 50, y: 50 },
+                        pushEnabled: false
+                    };
+                    await setDoc(userDocRef, newUser);
+                    localStorage.setItem('jwlingo_session', userStr);
+                    elements.registerError.classList.add('hidden');
+                    handleLoginSuccess(newUser);
+                }
+            } catch (e) {
+                console.error(e);
+                elements.registerError.textContent = "Błąd przy tworzeniu konta.";
+                elements.registerError.classList.remove('hidden');
+            } finally {
+                elements.btnRegister.disabled = false;
+                elements.btnRegister.textContent = "Utwórz konto";
+            }
+        });
+    }
 
     if (elements.btnInviteFriend) {
         elements.btnInviteFriend.addEventListener('click', async () => {

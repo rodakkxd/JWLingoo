@@ -16,14 +16,29 @@
             <div class="settings-card" style="width: 100%; text-align: center;">
                 <div class="modal-icon" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 10px;"><i class="fa-solid fa-book-open"></i></div>
                 <h1 style="font-size: 2.8rem; font-weight: 900; color: var(--primary-color); margin-bottom: 5px; letter-spacing: -2px;">JWLingo</h1>
-                <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 20px; color: var(--text-color);">Zaloguj się</h2>
-                <p style="margin-bottom: 20px; font-weight: 700; color: var(--text-light);">Jeśli konto nie istnieje, zostanie utworzone automatycznie.</p>
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <input type="text" id="auth-username" placeholder="Nazwa użytkownika" class="input-field" style="width: 100%;">
-                    <input type="text" id="auth-displayname" placeholder="Display Name (opcjonalny)" class="input-field" style="width: 100%;">
-                    <input type="password" id="auth-password" placeholder="Hasło" class="input-field" style="width: 100%;">
-                    <button id="btn-auth" class="btn btn-primary btn-chunky">Wejdź</button>
-                    <p id="auth-error" class="hidden" style="color: var(--danger-color); font-weight: 700; margin-top: 10px;">Błędne hasło!</p>
+                <!-- Login Form -->
+                <div id="auth-login-form">
+                    <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 20px; color: var(--text-color);">Zaloguj się</h2>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <input type="text" id="login-username" placeholder="Nazwa użytkownika" class="input-field" style="width: 100%;">
+                        <input type="password" id="login-password" placeholder="Hasło" class="input-field" style="width: 100%;">
+                        <button id="btn-login" class="btn btn-primary btn-chunky">Wejdź</button>
+                        <p id="login-error" class="hidden" style="color: var(--danger-color); font-weight: 700; margin-top: 10px;"></p>
+                    </div>
+                    <p style="margin-top: 20px; font-weight: 600; color: var(--text-light);">Nie masz konta? <span id="link-to-register" style="color: var(--primary-color); cursor: pointer; font-weight: 800; transition: opacity 0.2s;">Zarejestruj się</span></p>
+                </div>
+
+                <!-- Register Form -->
+                <div id="auth-register-form" class="hidden">
+                    <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 20px; color: var(--text-color);">Zarejestruj się</h2>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <input type="text" id="register-username" placeholder="Wybierz nazwę użytkownika" class="input-field" style="width: 100%;">
+                        <input type="text" id="register-displayname" placeholder="Jak mamy Cię nazywać?" class="input-field" style="width: 100%;">
+                        <input type="password" id="register-password" placeholder="Wybierz hasło" class="input-field" style="width: 100%;">
+                        <button id="btn-register" class="btn btn-primary btn-chunky">Utwórz konto</button>
+                        <p id="register-error" class="hidden" style="color: var(--danger-color); font-weight: 700; margin-top: 10px;"></p>
+                    </div>
+                    <p style="margin-top: 20px; font-weight: 600; color: var(--text-light);">Masz już konto? <span id="link-to-login" style="color: var(--primary-color); cursor: pointer; font-weight: 800; transition: opacity 0.2s;">Zaloguj się</span></p>
                 </div>
             </div>
         </section>
