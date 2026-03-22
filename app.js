@@ -40,6 +40,7 @@ let currentChatFriend = null;
 let messagesUnsubscribe = null;
 let initialMessagesLoaded = false;
 let userDocUnsubscribe = null;
+let friendAvatarCache = {};
 
 async function setupNotifications() {
     if (!("Notification" in window)) return;
@@ -128,6 +129,7 @@ const elements = {
     profileDisplayNameDisplay: document.getElementById('profile-displayname-display'),
     profileUsernameDisplay: document.getElementById('profile-username-display'),
     profileBioDisplay: document.getElementById('profile-bio-display'),
+    profileAvatarContainer: document.getElementById('profile-avatar-container'),
     
     settingsUsernameDisplay: document.getElementById('settings-username-display'),
     settingsDisplayNameInput: document.getElementById('settings-display-name-input'),
@@ -138,6 +140,9 @@ const elements = {
     btnLogout: document.getElementById('btn-logout'),
     themeToggle: document.getElementById('theme-toggle'),
     btnReset: document.getElementById('btn-reset'),
+    
+    avatarModal: document.getElementById('avatar-modal'),
+    btnCloseAvatarModal: document.getElementById('btn-close-avatar-modal'),
     
     modal: document.getElementById('achievement-modal'),
     modalTitle: document.getElementById('modal-title'),
@@ -264,7 +269,8 @@ function handleLoginSuccess(userData) {
         achievements: userData.achievements || [],
         friends: userData.friends || [],
         displayName: userData.displayName || "",
-        bio: userData.bio || ""
+        bio: userData.bio || "",
+        avatar: userData.avatar || ""
     };
     
     if (elements.settingsDisplayNameInput) {
@@ -329,7 +335,8 @@ async function saveState() {
             achievements: state.achievements,
             friends: state.friends,
             displayName: state.displayName,
-            bio: state.bio
+            bio: state.bio,
+            avatar: state.avatar
         });
     } catch(e) {
         console.error("Save Error:", e);
@@ -346,6 +353,38 @@ function updateUI() {
     } else {
         elements.greetingDisplayName.textContent = currentUser;
         elements.greetingUsername.style.display = 'none';
+    }
+    
+    // Update profile avatar
+    updateProfileAvatar();
+}
+
+function getAvatarHTML(avatarName, size = 40) {
+    const AVATAR_MAP = {
+        'lina': 'lina.PNG',
+        'kuba': 'kuba.PNG',
+        'tosia': 'tosia.PNG',
+        'gabrys': 'gabrys.PNG'
+    };
+    if (avatarName && AVATAR_MAP[avatarName]) {
+        return `<img src="${AVATAR_MAP[avatarName]}" alt="${avatarName}" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;">`;
+    }
+    return `<i class="fa-solid fa-user" style="font-size: ${size * 0.5}px;"></i>`;
+}
+
+function updateProfileAvatar() {
+    if (!elements.profileAvatarContainer) return;
+    const AVATAR_MAP = {
+        'lina': 'lina.PNG',
+        'kuba': 'kuba.PNG',
+        'tosia': 'tosia.PNG',
+        'gabrys': 'gabrys.PNG'
+    };
+    if (state.avatar && AVATAR_MAP[state.avatar]) {
+        elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[state.avatar]}" alt="${state.avatar}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        elements.profileAvatarContainer.style.overflow = 'hidden';
+    } else {
+        elements.profileAvatarContainer.innerHTML = '<i class="fa-solid fa-user"></i>';
     }
 }
 
@@ -582,6 +621,11 @@ async function renderFriends() {
     
     elements.friendsList.innerHTML = '';
     
+    // Cache friend avatars for messages list
+    fetchedFriends.forEach(f => {
+        friendAvatarCache[f.username] = f.avatar || '';
+    });
+    
     fetchedFriends.forEach(f => {
         const card = document.createElement('div');
         card.classList.add('friend-grid-card');
@@ -589,7 +633,7 @@ async function renderFriends() {
         let dName = f.displayName || f.username;
         
         card.innerHTML = `
-            <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}"><i class="fa-solid fa-user"></i></div>
+            <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50)}</div>
             <div class="friend-grid-name">${dName}</div>
             <div class="friend-grid-streak"><i class="fa-solid fa-fire"></i> ${f.streak || 0} dni</div>
             <div class="friend-grid-actions">
@@ -668,10 +712,20 @@ async function renderFriends() {
                 elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
                 elements.profileUsernameDisplay.textContent = `@${currentUser}`;
                 elements.profileBioDisplay.textContent = state.bio || "Brak biografii...";
+                updateProfileAvatar();
             } else {
                 elements.profileDisplayNameDisplay.textContent = "Ładowanie...";
                 elements.profileUsernameDisplay.textContent = `@${name}`;
                 elements.profileBioDisplay.textContent = "";
+                // Show friend's avatar from cache
+                const friendAvatar = friendAvatarCache[name] || '';
+                if (friendAvatar) {
+                    const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+                    elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[friendAvatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    elements.profileAvatarContainer.style.overflow = 'hidden';
+                } else {
+                    elements.profileAvatarContainer.innerHTML = '<i class="fa-solid fa-user"></i>';
+                }
                 
                 try {
                     let docSnap = await getDoc(doc(db, "users", name.toLowerCase()));
@@ -679,6 +733,12 @@ async function renderFriends() {
                         let uData = docSnap.data();
                         elements.profileDisplayNameDisplay.textContent = uData.displayName || name;
                         elements.profileBioDisplay.textContent = uData.bio || "Brak biografii...";
+                        // Update avatar from fresh data
+                        if (uData.avatar) {
+                            const AVATAR_MAP = { 'lina': 'lina.PNG', 'kuba': 'kuba.PNG', 'tosia': 'tosia.PNG', 'gabrys': 'gabrys.PNG' };
+                            elements.profileAvatarContainer.innerHTML = `<img src="${AVATAR_MAP[uData.avatar]}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                            elements.profileAvatarContainer.style.overflow = 'hidden';
+                        }
                     }
                 } catch(err) {
                     elements.profileDisplayNameDisplay.textContent = name;
@@ -754,7 +814,7 @@ function renderMessagesFriendsList() {
         
         card.innerHTML = `
             <div class="friend-info">
-                <div class="friend-avatar"><i class="fa-solid fa-envelope"></i></div>
+                <div class="friend-avatar" style="${friendAvatarCache[friendUsername] ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(friendAvatarCache[friendUsername], 40)}</div>
                 <div class="friend-details">
                     <span class="friend-name">${friendUsername}</span>
                     <span class="message-preview">${lastMsg}</span>
@@ -1004,6 +1064,7 @@ function setupEventListeners() {
                 elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
                 if (elements.settingsDisplayNameInput) elements.settingsDisplayNameInput.value = state.displayName || '';
                 if (elements.settingsBioInput) elements.settingsBioInput.value = state.bio || '';
+                updateProfileAvatar();
             }
         });
     });
@@ -1012,6 +1073,50 @@ function setupEventListeners() {
 
     elements.btnCloseModal.addEventListener('click', () => {
         elements.modal.classList.add('hidden');
+    });
+    
+    // Avatar selection
+    if (elements.btnSetAvatar) {
+        elements.btnSetAvatar.addEventListener('click', () => {
+            // Highlight current avatar
+            document.querySelectorAll('.avatar-option').forEach(opt => {
+                const img = opt.querySelector('img');
+                if (opt.getAttribute('data-avatar') === state.avatar) {
+                    img.style.borderColor = 'var(--primary-color)';
+                    img.style.borderWidth = '4px';
+                } else {
+                    img.style.borderColor = 'var(--border-color)';
+                    img.style.borderWidth = '4px';
+                }
+            });
+            elements.avatarModal.classList.remove('hidden');
+        });
+    }
+    
+    if (elements.btnCloseAvatarModal) {
+        elements.btnCloseAvatarModal.addEventListener('click', () => {
+            elements.avatarModal.classList.add('hidden');
+        });
+    }
+    
+    // Avatar option click handlers
+    document.querySelectorAll('.avatar-option').forEach(opt => {
+        opt.addEventListener('click', async () => {
+            const avatarName = opt.getAttribute('data-avatar');
+            state.avatar = avatarName;
+            await saveState();
+            updateProfileAvatar();
+            elements.avatarModal.classList.add('hidden');
+            showToast(`Zmieniono awatar na: ${avatarName}!`);
+        });
+        
+        // Hover effect
+        opt.addEventListener('mouseenter', () => {
+            opt.style.transform = 'scale(1.05)';
+        });
+        opt.addEventListener('mouseleave', () => {
+            opt.style.transform = 'scale(1)';
+        });
     });
 
     elements.themeToggle.addEventListener('change', (e) => {
@@ -1117,6 +1222,7 @@ function setupEventListeners() {
             elements.profileDisplayNameDisplay.textContent = state.displayName || currentUser;
             elements.profileUsernameDisplay.textContent = `@${currentUser}`;
             elements.profileBioDisplay.textContent = state.bio || "Tu jeszcze nic nie ma...";
+            updateProfileAvatar();
         });
     }
     
