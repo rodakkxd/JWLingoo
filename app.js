@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, addDoc, query, where, orderBy, limit, onSnapshot, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, addDoc, query, where, orderBy, limit, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDwba96XeU5xPwHJ8McK6DsP8O3cROWk",
@@ -14,7 +13,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
 
 // Password hashing using SHA-256 (Web Crypto API)
 async function hashPassword(password) {
@@ -266,23 +264,23 @@ function showInstallPrompt() {
 async function init() {
     setupEventListeners();
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            try {
-                let docSnap = await getDoc(doc(db, "users", user.uid));
-                if (docSnap.exists()) {
-                    handleLoginSuccess(docSnap.data());
-                } else {
-                    showAuthView();
-                }
-            } catch (e) {
-                console.error(e);
+    let session = localStorage.getItem('jwlingo_session');
+    if (session) {
+        try {
+            let docSnap = await getDoc(doc(db, "users", session.toLowerCase()));
+            if (docSnap.exists()) {
+                handleLoginSuccess(docSnap.data());
+            } else {
+                localStorage.removeItem('jwlingo_session');
                 showAuthView();
             }
-        } else {
+        } catch (e) {
+            console.error(e);
             showAuthView();
         }
-    });
+    } else {
+        showAuthView();
+    }
 }
 
 function showAuthView() {
@@ -1173,69 +1171,40 @@ function setupEventListeners() {
             elements.btnLogin.textContent = "Logowanie...";
 
             try {
-                const fakeEmail = userStr.toLowerCase() + "@jwlingo.app";
-                try {
-                    await signInWithEmailAndPassword(auth, fakeEmail, passStr);
-                    elements.loginError.classList.add('hidden');
-                    // onAuthStateChanged takes over handleLoginSuccess
-                } catch (err) {
-                    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-                        // Lazy Migration
-                        let oldUserDocRef = doc(db, "users", userStr.toLowerCase());
-                        let docSnap = await getDoc(oldUserDocRef);
+                let userDocRef = doc(db, "users", userStr.toLowerCase());
+                let docSnap = await getDoc(userDocRef);
 
-                        if (docSnap.exists()) {
-                            let userData = docSnap.data();
+                if (docSnap.exists()) {
+                    let userData = docSnap.data();
 
-                            if (userData.status === 'banned') {
-                                elements.loginError.textContent = "Konto zablokowane do odwołania";
-                                elements.loginError.classList.remove('hidden');
-                                elements.btnLogin.disabled = false;
-                                elements.btnLogin.textContent = "Wejdź";
-                                return;
-                            }
-                            if (userData.status === 'deactivated') {
-                                elements.loginError.textContent = "Konto dezaktywowane";
-                                elements.loginError.classList.remove('hidden');
-                                elements.btnLogin.disabled = false;
-                                elements.btnLogin.textContent = "Wejdź";
-                                return;
-                            }
-                            if (userData.status === 'deleted') {
-                                elements.loginError.textContent = "Username not available";
-                                elements.loginError.classList.remove('hidden');
-                                elements.btnLogin.disabled = false;
-                                elements.btnLogin.textContent = "Wejdź";
-                                return;
-                            }
-
-                            const hashedPass = await hashPassword(passStr);
-                            if (userData.password === hashedPass) {
-                                // Match! Perform Seamless Migration
-                                const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, passStr);
-                                const uid = userCredential.user.uid;
-                                
-                                const migratedData = { ...userData };
-                                delete migratedData.password;
-                                migratedData.usernameLowerCase = userStr.toLowerCase();
-
-                                await setDoc(doc(db, "users", uid), migratedData);
-                                await deleteDoc(oldUserDocRef);
-
-                                elements.loginError.classList.add('hidden');
-                            } else {
-                                elements.loginError.textContent = "Błędne hasło!";
-                                elements.loginError.classList.remove('hidden');
-                            }
-                        } else {
-                            elements.loginError.textContent = "Konto nie istnieje. Zarejestruj się.";
-                            elements.loginError.classList.remove('hidden');
-                        }
-                    } else {
-                        elements.loginError.textContent = "Błąd logowania (Firebase).";
+                    if (userData.status === 'banned') {
+                        elements.loginError.textContent = "Konto zablokowane do odwołania";
                         elements.loginError.classList.remove('hidden');
-                        console.error(err);
+                        return;
                     }
+                    if (userData.status === 'deactivated') {
+                        elements.loginError.textContent = "Konto dezaktywowane";
+                        elements.loginError.classList.remove('hidden');
+                        return;
+                    }
+                    if (userData.status === 'deleted') {
+                        elements.loginError.textContent = "Username not available";
+                        elements.loginError.classList.remove('hidden');
+                        return;
+                    }
+
+                    const hashedPass = await hashPassword(passStr);
+                    if (userData.password === hashedPass) {
+                        elements.loginError.classList.add('hidden');
+                        localStorage.setItem('jwlingo_session', userStr);
+                        handleLoginSuccess(userData);
+                    } else {
+                        elements.loginError.textContent = "Błędne hasło!";
+                        elements.loginError.classList.remove('hidden');
+                    }
+                } else {
+                    elements.loginError.textContent = "Konto nie istnieje. Zarejestruj się.";
+                    elements.loginError.classList.remove('hidden');
                 }
             } catch (e) {
                 console.error(e);
@@ -1265,21 +1234,17 @@ function setupEventListeners() {
             elements.btnRegister.textContent = "Tworzenie konta...";
 
             try {
-                // Check old DB for collision
-                let oldUserDocRef = doc(db, "users", userStr.toLowerCase());
-                let docSnap = await getDoc(oldUserDocRef);
-                
+                let userDocRef = doc(db, "users", userStr.toLowerCase());
+                let docSnap = await getDoc(userDocRef);
+
                 if (docSnap.exists()) {
                     elements.registerError.textContent = "Użytkownik o tej nazwie już istnieje!";
                     elements.registerError.classList.remove('hidden');
                 } else {
-                    const fakeEmail = userStr.toLowerCase() + "@jwlingo.app";
-                    const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, passStr);
-                    const uid = userCredential.user.uid;
-
+                    const hashedNewPass = await hashPassword(passStr);
                     let newUser = {
                         username: userStr,
-                        usernameLowerCase: userStr.toLowerCase(),
+                        password: hashedNewPass,
                         displayName: dispStr || userStr,
                         streak: 0,
                         lastReadDate: null,
@@ -1292,20 +1257,14 @@ function setupEventListeners() {
                         pushEnabled: false,
                         xp: 0
                     };
-                    await setDoc(doc(db, "users", uid), newUser);
-
+                    await setDoc(userDocRef, newUser);
+                    localStorage.setItem('jwlingo_session', userStr);
                     elements.registerError.classList.add('hidden');
-                    // onAuthStateChanged takes over!
+                    handleLoginSuccess(newUser);
                 }
             } catch (e) {
                 console.error(e);
-                if (e.code === 'auth/email-already-in-use') {
-                    elements.registerError.textContent = "Użytkownik o tej nazwie już istnieje!";
-                } else if (e.code === 'auth/weak-password') {
-                    elements.registerError.textContent = "Hasło jest za słabe (min. 6 znaków).";
-                } else {
-                    elements.registerError.textContent = "Błąd przy tworzeniu konta.";
-                }
+                elements.registerError.textContent = "Błąd przy tworzeniu konta.";
                 elements.registerError.classList.remove('hidden');
             } finally {
                 elements.btnRegister.disabled = false;
@@ -1618,14 +1577,10 @@ function setupEventListeners() {
     });
 
     // Logout
-    elements.btnLogout.addEventListener('click', async () => {
-        try {
-            currentUser = null;
-            await signOut(auth);
-            location.reload();
-        } catch (err) {
-            console.error("Logout error", err);
-        }
+    elements.btnLogout.addEventListener('click', () => {
+        currentUser = null;
+        localStorage.removeItem('jwlingo_session');
+        location.reload();
     });
 
     // Friends
