@@ -525,9 +525,10 @@ async function handleRead() {
         return;
     }
 
-    // Phase 2: Show quiz before completing reading
+    // Phase 2: Quiz disabled for now
     elements.btnRead.setAttribute('data-phase', '');
-    await showQuiz();
+    // await showQuiz();
+    completeReading();
 }
 
 async function completeReading() {
