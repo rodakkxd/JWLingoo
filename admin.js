@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, doc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDwba96XeU5xPwHJ8McK6DsP8O3cROWk",
@@ -12,8 +13,30 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Password hashing for legacy migration
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Sanitize user input to prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 const elements = {
+    adminUsername: document.getElementById('admin-username'),
     adminPass: document.getElementById('admin-pass'),
     btnAdminLogin: document.getElementById('btn-admin-login'),
     adminError: document.getElementById('admin-error'),
@@ -46,21 +69,81 @@ function showToast(message) {
     setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
 }
 
-elements.btnAdminLogin.addEventListener('click', () => {
-    if (elements.adminPass.value === "maslo") {
-        elements.viewAdminAuth.classList.add('hidden');
-        elements.adminAppContainer.classList.remove('hidden');
-        loadUsers();
-    } else {
+// Admin Login - Firebase Auth + role check
+elements.btnAdminLogin.addEventListener('click', async () => {
+    const username = elements.adminUsername.value.trim();
+    const password = elements.adminPass.value.trim();
+
+    if (!username || !password) {
+        elements.adminError.textContent = "Wypełnij oba pola!";
         elements.adminError.classList.remove('hidden');
+        return;
+    }
+
+    elements.btnAdminLogin.disabled = true;
+    elements.btnAdminLogin.textContent = "Logowanie...";
+    elements.adminError.classList.add('hidden');
+
+    const syntheticEmail = username.toLowerCase() + "@jwlingo.app";
+
+    try {
+        // Try Firebase Auth login
+        try {
+            await signInWithEmailAndPassword(auth, syntheticEmail, password);
+        } catch (authErr) {
+            // If user not in Firebase Auth, try legacy migration
+            if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
+                let docSnap = await getDoc(doc(db, "users", username.toLowerCase()));
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    if (userData.firebaseAuthMigrated) {
+                        throw new Error("Błędne hasło!");
+                    }
+                    const hashedPass = await hashPassword(password);
+                    if (userData.password === hashedPass) {
+                        const cred = await createUserWithEmailAndPassword(auth, syntheticEmail, password);
+                        await updateDoc(doc(db, "users", username.toLowerCase()), {
+                            authUid: cred.user.uid,
+                            firebaseAuthMigrated: true
+                        });
+                    } else {
+                        throw new Error("Błędne hasło!");
+                    }
+                } else {
+                    throw new Error("Konto nie istnieje.");
+                }
+            } else {
+                throw authErr;
+            }
+        }
+
+        // Auth successful - check admin role
+        let docSnap = await getDoc(doc(db, "users", username.toLowerCase()));
+        if (docSnap.exists() && docSnap.data().role === 'admin') {
+            elements.viewAdminAuth.classList.add('hidden');
+            elements.adminAppContainer.classList.remove('hidden');
+            loadUsers();
+        } else {
+            await signOut(auth);
+            elements.adminError.textContent = "Brak uprawnień administratora.";
+            elements.adminError.classList.remove('hidden');
+        }
+    } catch (e) {
+        elements.adminError.textContent = e.message || "Błąd logowania.";
+        elements.adminError.classList.remove('hidden');
+    } finally {
+        elements.btnAdminLogin.disabled = false;
+        elements.btnAdminLogin.textContent = "Zaloguj";
     }
 });
 
-elements.btnAdminLogout.addEventListener('click', () => {
+elements.btnAdminLogout.addEventListener('click', async () => {
+    await signOut(auth);
     elements.viewAdminAuth.classList.remove('hidden');
     elements.adminAppContainer.classList.add('hidden');
     elements.adminPass.value = '';
-    elements.navItems[0].click(); // reset to first tab
+    if (elements.adminUsername) elements.adminUsername.value = '';
+    elements.navItems[0].click();
 });
 
 if (elements.btnAdminFixXp) {
@@ -127,12 +210,13 @@ function renderUsersList() {
         const wrap = document.createElement('div');
         wrap.className = 'user-row';
         let statusText = u.status ? u.status : 'Aktywne';
+        let migrated = u.firebaseAuthMigrated ? '✓ Firebase' : '⚠ Legacy';
         wrap.innerHTML = `
             <div>
-                <strong>${u.username}</strong>
-                <div style="font-size: 0.8rem; color: var(--text-light);">Status: ${statusText}</div>
+                <strong>${escapeHtml(u.username)}</strong>
+                <div style="font-size: 0.8rem; color: var(--text-light);">Status: ${escapeHtml(statusText)} | ${migrated}</div>
             </div>
-            ${u.status !== 'deleted' ? `<button class="btn btn-primary btn-small edit-user-btn" data-username="${u.username}">Zarządzaj</button>` : `<span style="font-size: 0.8rem; color: var(--danger-color); font-weight: bold;">Usunięte</span>`}
+            ${u.status !== 'deleted' ? `<button class="btn btn-primary btn-small edit-user-btn" data-username="${escapeHtml(u.username)}">Zarządzaj</button>` : `<span style="font-size: 0.8rem; color: var(--danger-color); font-weight: bold;">Usunięte</span>`}
         `;
         elements.adminUsersList.appendChild(wrap);
     });
@@ -154,12 +238,12 @@ function renderStreaksList() {
         wrap.className = 'user-row';
         wrap.innerHTML = `
             <div style="flex: 1;">
-                <strong>${u.username}</strong>
+                <strong>${escapeHtml(u.username)}</strong>
                 <div style="font-size: 0.8rem; color: var(--text-light);">Bieżący Streak: ${u.streak || 0}</div>
             </div>
             <div style="display: flex; gap: 5px; align-items: center;">
-                <input type="number" id="streak-input-${u.username}" value="${u.streak || 0}" class="input-field" style="width: 70px; padding: 5px; text-align: center;">
-                <button class="btn btn-secondary btn-small save-streak-btn" data-username="${u.username}">Zapisz</button>
+                <input type="number" id="streak-input-${escapeHtml(u.username)}" value="${u.streak || 0}" class="input-field" style="width: 70px; padding: 5px; text-align: center;">
+                <button class="btn btn-secondary btn-small save-streak-btn" data-username="${escapeHtml(u.username)}">Zapisz</button>
             </div>
         `;
         elements.adminStreaksList.appendChild(wrap);
@@ -194,7 +278,7 @@ async function updateUserStatus(statusMsg, successToast) {
             updateData.friends = [];
             updateData.displayName = "";
             updateData.streak = 0;
-            updateData.password = Math.random().toString(36).slice(-8); // Randomize password
+            updateData.password = Math.random().toString(36).slice(-8);
         }
         await updateDoc(doc(db, "users", selectedUser.toLowerCase()), updateData);
         showToast(successToast);

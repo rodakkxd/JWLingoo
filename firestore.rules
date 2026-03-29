@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection
+    match /users/{userId} {
+      // Anyone logged in can read any user profile (needed for ranking, friends, search)
+      allow read: if request.auth != null;
+
+      // Owner can update their own doc (matched by authUid field)
+      // Prevent users from changing their role or authUid
+      allow update: if request.auth != null
+        && resource.data.authUid == request.auth.uid
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'authUid']));
+
+      // Allow create during registration (authUid must match)
+      allow create: if request.auth != null
+        && request.resource.data.authUid == request.auth.uid;
+
+      // MIGRATION: Allow update if doc doesn't have authUid yet (legacy user first login)
+      // This rule should be REMOVED after all users have migrated
+      allow update: if request.auth != null
+        && !('authUid' in resource.data)
+        && request.resource.data.authUid == request.auth.uid;
+    }
+
+    // Messages collection
+    match /messages/{messageId} {
+      // Any authenticated user can read messages
+      allow read: if request.auth != null;
+
+      // Only authenticated users can create messages
+      allow create: if request.auth != null
+        && request.resource.data.participants is list
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 500;
+    }
+  }
+}

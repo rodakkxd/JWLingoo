@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc, arrayUnion, addDoc, query, where, orderBy, limit, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAEDwba96XeU5xPwHJ8McK6DsP8O3cROWk",
@@ -13,6 +14,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // Password hashing using SHA-256 (Web Crypto API)
 async function hashPassword(password) {
@@ -23,8 +25,20 @@ async function hashPassword(password) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Sanitize user input to prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Current Session
 let currentUser = null;
+let authHandled = false;
 
 // App State (for current user)
 let state = {
@@ -264,23 +278,34 @@ function showInstallPrompt() {
 async function init() {
     setupEventListeners();
 
-    let session = localStorage.getItem('jwlingo_session');
-    if (session) {
-        try {
-            let docSnap = await getDoc(doc(db, "users", session.toLowerCase()));
-            if (docSnap.exists()) {
-                handleLoginSuccess(docSnap.data());
+    onAuthStateChanged(auth, async (firebaseUser) => {
+        if (authHandled) return;
+
+        if (firebaseUser) {
+            let session = localStorage.getItem('jwlingo_session');
+            if (session) {
+                try {
+                    let docSnap = await getDoc(doc(db, "users", session.toLowerCase()));
+                    if (docSnap.exists()) {
+                        authHandled = true;
+                        handleLoginSuccess(docSnap.data());
+                    } else {
+                        await signOut(auth);
+                        localStorage.removeItem('jwlingo_session');
+                        showAuthView();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showAuthView();
+                }
             } else {
-                localStorage.removeItem('jwlingo_session');
+                await signOut(auth);
                 showAuthView();
             }
-        } catch (e) {
-            console.error(e);
+        } else {
             showAuthView();
         }
-    } else {
-        showAuthView();
-    }
+    });
 }
 
 function showAuthView() {
@@ -688,15 +713,15 @@ async function renderFriends() {
         let dName = f.displayName || f.username;
 
         card.innerHTML = `
-            <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
-            <div class="friend-grid-name">${dName}</div>
+            <div class="friend-grid-avatar btn-view-profile" data-username="${escapeHtml(f.username)}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
+            <div class="friend-grid-name">${escapeHtml(dName)}</div>
             <div class="friend-grid-streak" style="display: flex; gap: 8px; justify-content: flex-end;">
                 <span title="Passa (dni)"><i class="fa-solid fa-fire" style="color: var(--danger-color);"></i> ${f.streak || 0}</span>
                 <span title="Punkty Doświadczenia"><i class="fa-solid fa-star" style="color: #f1c40f;"></i> ${f.xp || 0} XP</span>
             </div>
             <div class="friend-grid-actions">
-                <button class="btn btn-secondary btn-small btn-motivate" data-name="${f.username}" style="background-color: var(--secondary-color);">MOTYWUJ</button>
-                <button class="btn btn-secondary btn-small btn-chat" data-name="${f.username}" style="background-color: var(--secondary-color);">czatuj</button>
+                <button class="btn btn-secondary btn-small btn-motivate" data-name="${escapeHtml(f.username)}" style="background-color: var(--secondary-color);">MOTYWUJ</button>
+                <button class="btn btn-secondary btn-small btn-chat" data-name="${escapeHtml(f.username)}" style="background-color: var(--secondary-color);">czatuj</button>
             </div>
         `;
 
@@ -828,8 +853,8 @@ async function renderRanking() {
 
             card.innerHTML = `
                 <div style="font-size: 1.2rem; font-weight: 900; color: var(--text-light); width: 30px; text-align: center;">${rankDisplay}</div>
-                <div class="friend-grid-avatar btn-view-profile" data-username="${f.username}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
-                <div class="friend-grid-name">${dName}</div>
+                <div class="friend-grid-avatar btn-view-profile" data-username="${escapeHtml(f.username)}" style="${f.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(f.avatar, 50, f.avatarPos)}</div>
+                <div class="friend-grid-name">${escapeHtml(dName)}</div>
                 <div class="friend-grid-streak" style="display: flex; gap: 8px; justify-content: flex-end;">
                     <span title="Passa (dni)"><i class="fa-solid fa-fire" style="color: var(--danger-color);"></i> ${f.streak || 0}</span>
                     <span title="Punkty Doświadczenia"><i class="fa-solid fa-star" style="color: #f1c40f;"></i> ${f.xp || 0} XP</span>
@@ -939,8 +964,8 @@ function renderMessagesFriendsList() {
             <div class="friend-info">
                 <div class="friend-avatar" style="${friendAvatarCache[friendUsername]?.avatar ? 'padding: 0; overflow: hidden;' : ''}">${getAvatarHTML(friendAvatarCache[friendUsername]?.avatar, 40, friendAvatarCache[friendUsername]?.avatarPos)}</div>
                 <div class="friend-details">
-                    <span class="friend-name">${friendUsername}</span>
-                    <span class="message-preview">${lastMsg}</span>
+                    <span class="friend-name">${escapeHtml(friendUsername)}</span>
+                    <span class="message-preview">${escapeHtml(lastMsg)}</span>
                 </div>
             </div>
             <i class="fa-solid fa-chevron-right" style="color: var(--text-light);"></i>
@@ -981,7 +1006,7 @@ function renderChat(friendUsername) {
         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
         bubble.innerHTML = `
-            <div>${m.text}</div>
+            <div>${escapeHtml(m.text)}</div>
             <div class="chat-timestamp">${timeStr}</div>
         `;
 
@@ -994,6 +1019,11 @@ function renderChat(friendUsername) {
 async function sendChatMessage() {
     let text = elements.chatInput.value.trim();
     if (!text || !currentChatFriend) return;
+
+    if (text.length > 500) {
+        showToast("Wiadomość max 500 znaków!");
+        return;
+    }
 
     elements.btnSendMessage.disabled = true;
 
@@ -1049,10 +1079,10 @@ async function searchFriends() {
             div.innerHTML = `
                 <div class="friend-info">
                     <div class="friend-details">
-                        <span class="friend-name">${f.username}</span>
+                        <span class="friend-name">${escapeHtml(f.username)}</span>
                     </div>
                 </div>
-                ${isFriend ? '<span style="color:var(--text-light); font-weight:bold;">Znajomy ✓</span>' : `<button class="btn btn-primary btn-small btn-add-friend" data-name="${f.username}">Dodaj</button>`}
+                ${isFriend ? '<span style="color:var(--text-light); font-weight:bold;">Znajomy ✓</span>' : `<button class="btn btn-primary btn-small btn-add-friend" data-name="${escapeHtml(f.username)}">Dodaj</button>`}
             `;
             elements.searchResults.appendChild(div);
         });
@@ -1155,14 +1185,14 @@ function setupEventListeners() {
             let userStr = elements.loginUsername.value.trim();
             let passStr = elements.loginPassword.value.trim();
 
-            // Admin redirect bypass
-            if (userStr === "admin1" && passStr === "rodakkrul") {
-                window.location.href = "admin.html";
+            if (!userStr || !passStr) {
+                elements.loginError.textContent = "Wypełnij oba pola!";
+                elements.loginError.classList.remove('hidden');
                 return;
             }
 
-            if (!userStr || !passStr) {
-                elements.loginError.textContent = "Wypełnij oba pola!";
+            if (userStr.length > 20) {
+                elements.loginError.textContent = "Nazwa max 20 znaków.";
                 elements.loginError.classList.remove('hidden');
                 return;
             }
@@ -1170,45 +1200,94 @@ function setupEventListeners() {
             elements.btnLogin.disabled = true;
             elements.btnLogin.textContent = "Logowanie...";
 
+            const syntheticEmail = userStr.toLowerCase() + "@jwlingo.app";
+
             try {
-                let userDocRef = doc(db, "users", userStr.toLowerCase());
-                let docSnap = await getDoc(userDocRef);
-
-                if (docSnap.exists()) {
-                    let userData = docSnap.data();
-
-                    if (userData.status === 'banned') {
-                        elements.loginError.textContent = "Konto zablokowane do odwołania";
-                        elements.loginError.classList.remove('hidden');
-                        return;
-                    }
-                    if (userData.status === 'deactivated') {
-                        elements.loginError.textContent = "Konto dezaktywowane";
-                        elements.loginError.classList.remove('hidden');
-                        return;
-                    }
-                    if (userData.status === 'deleted') {
-                        elements.loginError.textContent = "Username not available";
-                        elements.loginError.classList.remove('hidden');
-                        return;
-                    }
-
-                    const hashedPass = await hashPassword(passStr);
-                    if (userData.password === hashedPass) {
-                        elements.loginError.classList.add('hidden');
+                // Try Firebase Auth first (already migrated users)
+                try {
+                    await signInWithEmailAndPassword(auth, syntheticEmail, passStr);
+                    let docSnap = await getDoc(doc(db, "users", userStr.toLowerCase()));
+                    if (docSnap.exists()) {
+                        let userData = docSnap.data();
+                        if (userData.status === 'banned' || userData.status === 'deactivated' || userData.status === 'deleted') {
+                            await signOut(auth);
+                            elements.loginError.textContent = "Konto zablokowane.";
+                            elements.loginError.classList.remove('hidden');
+                            return;
+                        }
+                        authHandled = true;
                         localStorage.setItem('jwlingo_session', userStr);
                         handleLoginSuccess(userData);
-                    } else {
-                        elements.loginError.textContent = "Błędne hasło!";
-                        elements.loginError.classList.remove('hidden');
+                        return;
                     }
-                } else {
-                    elements.loginError.textContent = "Konto nie istnieje. Zarejestruj się.";
-                    elements.loginError.classList.remove('hidden');
+                } catch (firebaseAuthError) {
+                    // Firebase Auth failed - try legacy migration
+                    if (firebaseAuthError.code === 'auth/user-not-found' || firebaseAuthError.code === 'auth/invalid-credential') {
+                        let userDocRef = doc(db, "users", userStr.toLowerCase());
+                        let docSnap = await getDoc(userDocRef);
+
+                        if (docSnap.exists()) {
+                            let userData = docSnap.data();
+
+                            if (userData.status === 'banned') {
+                                elements.loginError.textContent = "Konto zablokowane do odwołania";
+                                elements.loginError.classList.remove('hidden');
+                                return;
+                            }
+                            if (userData.status === 'deactivated') {
+                                elements.loginError.textContent = "Konto dezaktywowane";
+                                elements.loginError.classList.remove('hidden');
+                                return;
+                            }
+                            if (userData.status === 'deleted') {
+                                elements.loginError.textContent = "Konto nie istnieje";
+                                elements.loginError.classList.remove('hidden');
+                                return;
+                            }
+
+                            // If already migrated, it's just a wrong password
+                            if (userData.firebaseAuthMigrated) {
+                                elements.loginError.textContent = "Błędne hasło!";
+                                elements.loginError.classList.remove('hidden');
+                                return;
+                            }
+
+                            // Legacy: verify old hash and migrate
+                            const hashedPass = await hashPassword(passStr);
+                            if (userData.password === hashedPass) {
+                                try {
+                                    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, passStr);
+                                    await updateDoc(userDocRef, {
+                                        authUid: userCredential.user.uid,
+                                        firebaseAuthMigrated: true
+                                    });
+                                    authHandled = true;
+                                    localStorage.setItem('jwlingo_session', userStr);
+                                    handleLoginSuccess({ ...userData, authUid: userCredential.user.uid });
+                                    return;
+                                } catch (migrationError) {
+                                    console.error("Migration error:", migrationError);
+                                    elements.loginError.textContent = "Błąd migracji konta. Spróbuj ponownie.";
+                                    elements.loginError.classList.remove('hidden');
+                                    return;
+                                }
+                            } else {
+                                elements.loginError.textContent = "Błędne hasło!";
+                                elements.loginError.classList.remove('hidden');
+                                return;
+                            }
+                        } else {
+                            elements.loginError.textContent = "Konto nie istnieje. Zarejestruj się.";
+                            elements.loginError.classList.remove('hidden');
+                            return;
+                        }
+                    } else {
+                        throw firebaseAuthError;
+                    }
                 }
             } catch (e) {
                 console.error(e);
-                elements.loginError.textContent = "Błąd bazy danych.";
+                elements.loginError.textContent = "Wystąpił błąd. Spróbuj ponownie.";
                 elements.loginError.classList.remove('hidden');
             } finally {
                 elements.btnLogin.disabled = false;
@@ -1230,6 +1309,30 @@ function setupEventListeners() {
                 return;
             }
 
+            if (!/^[a-zA-Z0-9_]+$/.test(userStr)) {
+                elements.registerError.textContent = "Nazwa: tylko litery, cyfry i _";
+                elements.registerError.classList.remove('hidden');
+                return;
+            }
+
+            if (userStr.length > 20) {
+                elements.registerError.textContent = "Nazwa max 20 znaków.";
+                elements.registerError.classList.remove('hidden');
+                return;
+            }
+
+            if (passStr.length < 6) {
+                elements.registerError.textContent = "Hasło musi mieć min. 6 znaków.";
+                elements.registerError.classList.remove('hidden');
+                return;
+            }
+
+            if (dispStr.length > 30) {
+                elements.registerError.textContent = "Display name max 30 znaków.";
+                elements.registerError.classList.remove('hidden');
+                return;
+            }
+
             elements.btnRegister.disabled = true;
             elements.btnRegister.textContent = "Tworzenie konta...";
 
@@ -1241,10 +1344,13 @@ function setupEventListeners() {
                     elements.registerError.textContent = "Użytkownik o tej nazwie już istnieje!";
                     elements.registerError.classList.remove('hidden');
                 } else {
-                    const hashedNewPass = await hashPassword(passStr);
+                    const syntheticEmail = userStr.toLowerCase() + "@jwlingo.app";
+                    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, passStr);
+
                     let newUser = {
                         username: userStr,
-                        password: hashedNewPass,
+                        authUid: userCredential.user.uid,
+                        firebaseAuthMigrated: true,
                         displayName: dispStr || userStr,
                         streak: 0,
                         lastReadDate: null,
@@ -1258,13 +1364,20 @@ function setupEventListeners() {
                         xp: 0
                     };
                     await setDoc(userDocRef, newUser);
+                    authHandled = true;
                     localStorage.setItem('jwlingo_session', userStr);
                     elements.registerError.classList.add('hidden');
                     handleLoginSuccess(newUser);
                 }
             } catch (e) {
                 console.error(e);
-                elements.registerError.textContent = "Błąd przy tworzeniu konta.";
+                if (e.code === 'auth/email-already-in-use') {
+                    elements.registerError.textContent = "Konto z tą nazwą już istnieje.";
+                } else if (e.code === 'auth/weak-password') {
+                    elements.registerError.textContent = "Hasło zbyt słabe (min. 6 znaków).";
+                } else {
+                    elements.registerError.textContent = "Błąd przy tworzeniu konta.";
+                }
                 elements.registerError.classList.remove('hidden');
             } finally {
                 elements.btnRegister.disabled = false;
@@ -1577,9 +1690,13 @@ function setupEventListeners() {
     });
 
     // Logout
-    elements.btnLogout.addEventListener('click', () => {
+    elements.btnLogout.addEventListener('click', async () => {
+        authHandled = false;
         currentUser = null;
         localStorage.removeItem('jwlingo_session');
+        if (userDocUnsubscribe) userDocUnsubscribe();
+        if (messagesUnsubscribe) messagesUnsubscribe();
+        await signOut(auth);
         location.reload();
     });
 
@@ -1598,6 +1715,10 @@ function setupEventListeners() {
     if (elements.btnSaveDisplayName) {
         elements.btnSaveDisplayName.addEventListener('click', async () => {
             let newName = elements.settingsDisplayNameInput.value.trim();
+            if (newName.length > 30) {
+                showToast("Display name max 30 znaków!");
+                return;
+            }
             elements.btnSaveDisplayName.disabled = true;
             elements.btnSaveDisplayName.textContent = "...";
 
@@ -1620,6 +1741,10 @@ function setupEventListeners() {
     if (elements.btnSaveBio) {
         elements.btnSaveBio.addEventListener('click', async () => {
             let newBio = elements.settingsBioInput.value.trim();
+            if (newBio.length > 200) {
+                showToast("Bio max 200 znaków!");
+                return;
+            }
             elements.btnSaveBio.disabled = true;
             elements.btnSaveBio.textContent = "...";
             try {
