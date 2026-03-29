@@ -569,11 +569,23 @@ async function loadQuizData() {
 
 async function showQuiz() {
     const data = await loadQuizData();
+    if (!data || data.length === 0) {
+        closeQuiz();
+        completeReading();
+        return;
+    }
+
+    // Pick a deterministic question for today based on date
     const todayStr = new Date().toISOString().slice(0, 10);
-    const q = data.find(item => item.date === todayStr);
+    let hash = 0;
+    for (let i = 0; i < todayStr.length; i++) {
+        hash = ((hash << 5) - hash) + todayStr.charCodeAt(i);
+        hash |= 0;
+    }
+    const index = Math.abs(hash) % data.length;
+    const q = data[index];
 
     if (!q) {
-        // No quiz for today - just complete reading directly
         closeQuiz();
         completeReading();
         return;
@@ -593,12 +605,17 @@ async function showQuiz() {
     questionEl.textContent = q.question;
     answersEl.innerHTML = '';
 
+    // Support both 'options' and 'answers' format
+    const answers = q.options || q.answers;
+    const correctAnswer = q.correct_answer || q.correct;
+
     const letters = ['A', 'B', 'C', 'D'];
     letters.forEach(letter => {
         const btn = document.createElement('button');
         btn.className = 'quiz-answer-btn';
-        btn.innerHTML = `<span class="quiz-letter">${letter}</span><span>${q.answers[letter]}</span>`;
-        btn.addEventListener('click', () => handleQuizAnswer(letter, q.correct, btn));
+        btn.innerHTML = `<span class="quiz-letter">${letter}</span><span>${escapeHtml(answers[letter])}</span>`;
+
+        btn.addEventListener('click', () => handleQuizAnswer(letter, correctAnswer, btn));
         answersEl.appendChild(btn);
     });
 }
