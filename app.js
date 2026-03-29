@@ -36,6 +36,12 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
+// Firebase Auth requires min 6 chars — pad short legacy passwords
+function firebasePassword(pass) {
+    while (pass.length < 6) pass += '_';
+    return pass;
+}
+
 // Current Session
 let currentUser = null;
 let authHandled = false;
@@ -1205,7 +1211,7 @@ function setupEventListeners() {
             try {
                 // Try Firebase Auth first (already migrated users)
                 try {
-                    await signInWithEmailAndPassword(auth, syntheticEmail, passStr);
+                    await signInWithEmailAndPassword(auth, syntheticEmail, firebasePassword(passStr));
                     let docSnap = await getDoc(doc(db, "users", userStr.toLowerCase()));
                     if (docSnap.exists()) {
                         let userData = docSnap.data();
@@ -1256,7 +1262,7 @@ function setupEventListeners() {
                             const hashedPass = await hashPassword(passStr);
                             if (userData.password === hashedPass) {
                                 try {
-                                    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, passStr);
+                                    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, firebasePassword(passStr));
                                     await updateDoc(userDocRef, {
                                         authUid: userCredential.user.uid,
                                         firebaseAuthMigrated: true
@@ -1270,7 +1276,7 @@ function setupEventListeners() {
                                     // Handle partial migration (account exists in Firebase Auth but Firestore not updated)
                                     if (migrationError.code === 'auth/email-already-in-use') {
                                         try {
-                                            const cred = await signInWithEmailAndPassword(auth, syntheticEmail, passStr);
+                                            const cred = await signInWithEmailAndPassword(auth, syntheticEmail, firebasePassword(passStr));
                                             await updateDoc(userDocRef, {
                                                 authUid: cred.user.uid,
                                                 firebaseAuthMigrated: true
@@ -1369,7 +1375,7 @@ function setupEventListeners() {
                     elements.registerError.classList.remove('hidden');
                 } else {
                     const syntheticEmail = userStr.toLowerCase() + "@jwlingo.app";
-                    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, passStr);
+                    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, firebasePassword(passStr));
 
                     let newUser = {
                         username: userStr,

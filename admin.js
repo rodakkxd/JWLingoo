@@ -35,6 +35,12 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
+// Firebase Auth requires min 6 chars — pad short legacy passwords
+function firebasePassword(pass) {
+    while (pass.length < 6) pass += '_';
+    return pass;
+}
+
 const elements = {
     adminUsername: document.getElementById('admin-username'),
     adminPass: document.getElementById('admin-pass'),
@@ -89,7 +95,7 @@ elements.btnAdminLogin.addEventListener('click', async () => {
     try {
         // Try Firebase Auth login
         try {
-            await signInWithEmailAndPassword(auth, syntheticEmail, password);
+            await signInWithEmailAndPassword(auth, syntheticEmail, firebasePassword(password));
         } catch (authErr) {
             // If user not in Firebase Auth, try legacy migration
             if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
@@ -101,7 +107,7 @@ elements.btnAdminLogin.addEventListener('click', async () => {
                     }
                     const hashedPass = await hashPassword(password);
                     if (userData.password === hashedPass) {
-                        const cred = await createUserWithEmailAndPassword(auth, syntheticEmail, password);
+                        const cred = await createUserWithEmailAndPassword(auth, syntheticEmail, firebasePassword(password));
                         await updateDoc(doc(db, "users", username.toLowerCase()), {
                             authUid: cred.user.uid,
                             firebaseAuthMigrated: true
