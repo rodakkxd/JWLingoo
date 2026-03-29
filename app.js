@@ -1267,7 +1267,31 @@ function setupEventListeners() {
                                     return;
                                 } catch (migrationError) {
                                     console.error("Migration error:", migrationError);
-                                    elements.loginError.textContent = "Błąd migracji konta. Spróbuj ponownie.";
+                                    // Handle partial migration (account exists in Firebase Auth but Firestore not updated)
+                                    if (migrationError.code === 'auth/email-already-in-use') {
+                                        try {
+                                            const cred = await signInWithEmailAndPassword(auth, syntheticEmail, passStr);
+                                            await updateDoc(userDocRef, {
+                                                authUid: cred.user.uid,
+                                                firebaseAuthMigrated: true
+                                            });
+                                            authHandled = true;
+                                            localStorage.setItem('jwlingo_session', userStr);
+                                            handleLoginSuccess({ ...userData, authUid: cred.user.uid });
+                                            return;
+                                        } catch (retryErr) {
+                                            console.error("Retry migration error:", retryErr);
+                                            elements.loginError.textContent = "Błąd migracji: " + retryErr.code;
+                                            elements.loginError.classList.remove('hidden');
+                                            return;
+                                        }
+                                    }
+                                    if (migrationError.code === 'auth/operation-not-allowed') {
+                                        elements.loginError.textContent = "Email/Password auth nie włączone w Firebase Console!";
+                                        elements.loginError.classList.remove('hidden');
+                                        return;
+                                    }
+                                    elements.loginError.textContent = "Błąd migracji: " + (migrationError.code || migrationError.message);
                                     elements.loginError.classList.remove('hidden');
                                     return;
                                 }
